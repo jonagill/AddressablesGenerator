@@ -7,6 +7,12 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         private class EditorContent
         {
             public const float ToggleLabelWidth = 300f;
+
+            public static readonly GUIContent RunAllGeneratorsLabel = new GUIContent(
+                "Run all registered generators during builds", 
+                "If true, we will automatically run all Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
+                "This should generally be safe, but you may wish to disable it if you want to rely on your generated groups being manually generated and checked into version control.");
+            
             public static readonly GUIContent GenerateDependencyGroupsLabel = new GUIContent(
                 "Generate dependency bundles during builds", 
                 "If true, we will automatically generate optimized dependency groups during the build process to reduce duplicate asset usage. " +
@@ -14,12 +20,23 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 "(E.g games that ship additional bundle updates separate from the main client build.");
         }
         
-        private const string GenerateDependencyGroupsKey = "AddressablesGeneratorSettings_GenerateDependencyGroupsKey";
+        private const string RunAllGeneratorsKey = "AddressablesGeneratorSettings_RunAllGenerators";
+        private const string GenerateDependencyGroupsKey = "AddressablesGeneratorSettings_GenerateDependencyGroups";
+
+        /// <summary>
+        /// Whether to automatically run any registered Addressable Group generators during the build process
+        /// </summary>
+        public static bool RunGeneratorsDuringBuilds
+        {
+            get => EditorPrefs.GetBool(RunAllGeneratorsKey, true);
+            set => EditorPrefs.SetBool(RunAllGeneratorsKey, value);
+        }
+
         
         /// <summary>
         /// Whether to automatically generate additional Addressable Groups to manage asset bundle dependencies during the build process
         /// </summary>
-        public static bool GenerateDependencyGroups
+        public static bool GenerateDependencyGroupsDuringBuilds
         {
             get => EditorPrefs.GetBool(GenerateDependencyGroupsKey, false);
             set => EditorPrefs.SetBool(GenerateDependencyGroupsKey, value);
@@ -44,7 +61,8 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         {
             var prevWidth = EditorGUIUtility.labelWidth;
             EditorGUIUtility.labelWidth = EditorContent.ToggleLabelWidth;
-            GenerateDependencyGroups = EditorGUILayout.Toggle(EditorContent.GenerateDependencyGroupsLabel, GenerateDependencyGroups, GUILayout.ExpandWidth(true));
+            RunGeneratorsDuringBuilds = EditorGUILayout.Toggle(EditorContent.RunAllGeneratorsLabel, RunGeneratorsDuringBuilds);
+            GenerateDependencyGroupsDuringBuilds = EditorGUILayout.Toggle(EditorContent.GenerateDependencyGroupsLabel, GenerateDependencyGroupsDuringBuilds);
             EditorGUIUtility.labelWidth = prevWidth;
         }
     }

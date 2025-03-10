@@ -22,16 +22,23 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
-                 AddressablesGeneratorSettings.GenerateDependencyGroups)
+            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings))
             {
-                // Delete any old dependency groups that may still exist (e.g. from a failed build)
-                GenerateDependencyBundles.DeleteAllDependencyGroups(settings);
+                if (AddressablesGeneratorSettings.RunGeneratorsDuringBuilds)
+                {
+                    AddressableAssetGroupGenerator.RunAllGenerators();
+                }
+                
+                if (AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
+                {
+                    // Delete any old dependency groups that may still exist (e.g. from a failed build)
+                    GenerateDependencyBundles.DeleteAllDependencyGroups(settings);
 
-                // Find all our assets that are dependencies of multiple Addressable groups
-                // and put them into their own groups to prevent duplicating those assets
-                var fixDependenciesRule = new GenerateDependencyBundles();
-                fixDependenciesRule.FixIssues(settings);
+                    // Find all our assets that are dependencies of multiple Addressable groups
+                    // and put them into their own groups to prevent duplicating those assets
+                    var fixDependenciesRule = new GenerateDependencyBundles();
+                    fixDependenciesRule.FixIssues(settings);
+                }
             }
 
         }
@@ -43,7 +50,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             // will still have their bundles changed
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
-                AddressablesGeneratorSettings.GenerateDependencyGroups)
+                AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
             {
                 GenerateDependencyBundles.DeleteAllDependencyGroups(settings);
             }

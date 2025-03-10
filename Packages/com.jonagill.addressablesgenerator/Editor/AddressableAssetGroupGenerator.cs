@@ -85,7 +85,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             MoveAssetsInResources(filesInResources, resourceFolders);
             DeleteEmptyResourceFolders(resourceFolders);
 
-            AddAssetsToCatalog(settings, entryRequests, group, makeReadOnly, out isCanceled);
+            AddAssetsToGroup(settings, entryRequests, group, makeReadOnly, out isCanceled);
             if (isCanceled)
             {
                 return;
@@ -299,7 +299,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             AssetDatabase.StopAssetEditing();
         }
 
-        private static void AddAssetsToCatalog(
+        private static void AddAssetsToGroup(
             AddressableAssetSettings settings,
             IReadOnlyList<AssetEntryRequest> entryRequests,
             AddressableAssetGroup group,
@@ -350,7 +350,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
 
 #region AssetModificationProcessor
 
-        private struct CatalogGenerator
+        private struct GroupGenerator
         {
             public Func<UnityEngine.Object, string> groupNameGenerator;
             public Func<UnityEngine.Object, IReadOnlyList<AssetEntryRequest>> requestGenerator;
@@ -361,7 +361,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             public Action<UnityEngine.Object> onAddressablesGeneratedForAsset;
         }
 
-        private static readonly Dictionary<Type, CatalogGenerator> PerTypeCatalogGenerators = new();
+        private static readonly Dictionary<Type, GroupGenerator> PerTypeGenerators = new();
         private static readonly List<string> PathsToProcess = new();
         private static readonly List<string> PathsJustProcessed = new();
 
@@ -394,16 +394,16 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
        ) where T : UnityEngine.Object
         {
             var type = typeof(T);
-            if (PerTypeCatalogGenerators.ContainsKey(type))
+            if (PerTypeGenerators.ContainsKey(type))
             {
-                Debug.LogError($"Addressable catalog generator already registered for type {type.Name}");
+                Debug.LogError($"Addressable group generator already registered for type {type.Name}");
                 return;
             }
 
             string UntypedGroupNameGenerator(object o) => groupNameGenerator((T) o);
             IReadOnlyList<AssetEntryRequest> UntypedRequestGenerator(object o) => requestGenerator((T) o);
 
-            PerTypeCatalogGenerators[type] = new CatalogGenerator()
+            PerTypeGenerators[type] = new GroupGenerator()
             {
                 groupNameGenerator = UntypedGroupNameGenerator,
                 requestGenerator = (Func<Object, IReadOnlyList<AssetEntryRequest>>) UntypedRequestGenerator,
@@ -427,7 +427,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             {
                 var assetPath = assetPaths[i];
                 if (EditorUtility.DisplayCancelableProgressBar(
-                        "Running Addressables catalog generators...",
+                        "Running Addressables group generators...",
                         assetPath,
                         i / (float)assetPaths.Count))
                 {
@@ -435,20 +435,20 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 }
 
                 var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-                if (PerTypeCatalogGenerators.TryGetValue(type, out var catalogGenerator))
+                if (PerTypeGenerators.TryGetValue(type, out var generator))
                 {
                     var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-                    var groupName = catalogGenerator.groupNameGenerator.Invoke(asset);
-                    var entryRequests = catalogGenerator.requestGenerator.Invoke(asset);
+                    var groupName = generator.groupNameGenerator.Invoke(asset);
+                    var entryRequests = generator.requestGenerator.Invoke(asset);
 
                     AddEntries(
                         groupName,
                         entryRequests,
-                        catalogGenerator.packingMode,
-                        catalogGenerator.clearGroup,
-                        catalogGenerator.makeReadOnly);
+                        generator.packingMode,
+                        generator.clearGroup,
+                        generator.makeReadOnly);
 
-                    catalogGenerator.onAddressablesGeneratedForAsset?.Invoke(asset);
+                    generator.onAddressablesGeneratedForAsset?.Invoke(asset);
                 }
             }
 
@@ -472,7 +472,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             foreach (var assetPath in importedAssets)
             {
                 var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-                if (PerTypeCatalogGenerators.ContainsKey(type) &&
+                if (PerTypeGenerators.ContainsKey(type) &&
                      !PathsToProcess.Contains(assetPath) &&
                      !PathsJustProcessed.Contains(assetPath))
                 {
@@ -505,9 +505,9 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         }
 
         [MenuItem("Tools/Addressables Generator/Run All Generators")]
-        private static void RunAllCatalogGenerators()
+        public static void RunAllGenerators()
         {
-            foreach (var kvp in PerTypeCatalogGenerators)
+            foreach (var kvp in PerTypeGenerators)
             {
                 var type = kvp.Key;
                 var assetPaths =
