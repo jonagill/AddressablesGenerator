@@ -15,18 +15,10 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings))
+            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
+                AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
             {
-                if (AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
-                {
-                    // Delete any old dependency groups that may still exist (e.g. from a failed build)
-                    GenerateDependencyBundles.DeleteAllDependencyGroups(settings);
-
-                    // Find all our assets that are dependencies of multiple Addressable groups
-                    // and put them into their own groups to prevent duplicating those assets
-                    var fixDependenciesRule = new GenerateDependencyBundles();
-                    fixDependenciesRule.FixIssues(settings);
-                }
+                    GenerateDependencyBundles.GenerateDependencyGroups();
             }
         }
 

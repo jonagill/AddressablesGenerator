@@ -23,7 +23,12 @@ All Addressable Group generation is handled by the class `AddressableGroupGenera
 
 `ScriptableObjectAddressableGroupGenerator` provides a base class and some guidance on using type-specific generators. One thing to note is that, if your source asset references Addressable assets directly (e.g. a prefab library with an array of direct prefab references), you must make sure that these direct references do not themselves affect the Addressable dependency chain. This can be done by making sure your source asset doesn't exist in the build itself (by not including it in Addressables and not referencing it via any other Addressable asset), or by making it so your direct source references are not compiled at runtime by wrapping them in an `#if UNITY_EDITOR` directive.
 
-An alternative method could be to create an `IPreprocessBuildWithReport` class that calls `AddEntries()` right before we build Addressables. This class should have a callback order less than or equal to `AddressableGroupGenerator.GenerateGroupsCallbackOrder` to ensure that your entries get added before we generate dependency groups and build asset bundles.
+An alternative method could be to create a `BuildProcessor` class that calls `AddEntries()` right before we build Addressables. This class should have a callback order less than or equal to `AddressablesGeneratorBuildProcessor.CallbackOrder` to ensure that your entries get added before we generate dependency groups and build asset bundles.
+
+## Run a build
+By default, registered generators will run during a build if that build is also set to generate Addressables. The build can also be configured to automatically generate dependency bundles as part of the build process (see **Settings** below).
+
+Neither of these steps will happen automatically when manually building Addressables from the Addressable Groups window. You can trigger this behavior via the `Tools/Addressables Generator` menu item if you wish to manually generate groups outside of a build.
 
 ## Settings
 All of the behavior of this package can be configured via the **Addressables Generator** section of your project's **Project Settings**. These allow you to enable and disable the automatic generation of generated groups and dependency bundles as part of the build process.

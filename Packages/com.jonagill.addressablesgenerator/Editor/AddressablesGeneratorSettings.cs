@@ -28,7 +28,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         /// </summary>
         public static bool RunGeneratorsDuringBuilds
         {
-            get => EditorPrefs.GetBool(RunGeneratorsKey, false);
+            get => EditorPrefs.GetBool(RunGeneratorsKey, true);
             set => EditorPrefs.SetBool(RunGeneratorsKey, value);
         }
 
