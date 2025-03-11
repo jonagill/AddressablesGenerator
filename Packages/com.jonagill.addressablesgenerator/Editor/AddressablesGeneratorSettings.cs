@@ -10,7 +10,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
 
             public static readonly GUIContent RunAllGeneratorsLabel = new GUIContent(
                 "Run all registered generators during builds", 
-                "If true, we will automatically run all Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
+                "If true, we will automatically run Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
                 "This should generally be safe, but you may wish to disable it if you want to rely on your generated groups being manually generated and checked into version control.");
             
             public static readonly GUIContent GenerateDependencyGroupsLabel = new GUIContent(
@@ -20,7 +20,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 "(E.g games that ship additional bundle updates separate from the main client build.");
         }
         
-        private const string RunAllGeneratorsKey = "AddressablesGeneratorSettings_RunAllGenerators";
+        private const string RunGeneratorsKey = "AddressablesGeneratorSettings_RunGenerators";
         private const string GenerateDependencyGroupsKey = "AddressablesGeneratorSettings_GenerateDependencyGroups";
 
         /// <summary>
@@ -28,8 +28,8 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         /// </summary>
         public static bool RunGeneratorsDuringBuilds
         {
-            get => EditorPrefs.GetBool(RunAllGeneratorsKey, true);
-            set => EditorPrefs.SetBool(RunAllGeneratorsKey, value);
+            get => EditorPrefs.GetBool(RunGeneratorsKey, false);
+            set => EditorPrefs.SetBool(RunGeneratorsKey, value);
         }
 
         

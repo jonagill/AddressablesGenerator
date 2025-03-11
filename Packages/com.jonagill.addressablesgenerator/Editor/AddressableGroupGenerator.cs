@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEngine;
 using Object = System.Object;
 
@@ -12,8 +14,12 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// <summary>
     /// Editor class that handles auto-generating addressable asset groups whenever a configuration file changes
     /// </summary>
-    public class AddressableAssetGroupGenerator : AssetPostprocessor
+    public class AddressableGroupGenerator : AssetPostprocessor, IPreprocessBuildWithReport
     {
+        // Run before AddressablesGeneratorBuildProcessor (callbackOrder 0) and
+        // AddressablesPlayerBuildProcessor (callbackOrder 1)
+        public const int GenerateGroupsCallbackOrder = -1;
+        
         private const string GENERATED_GROUP_SUFFIX = " (Generated)";
 
         [System.Serializable]
@@ -519,6 +525,21 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             }
         }
 
+        #endregion
+
+        #region IPreprocessBuildWithReport
+        
+        int IOrderedCallback.callbackOrder => GenerateGroupsCallbackOrder;
+
+        void IPreprocessBuildWithReport.OnPreprocessBuild(BuildReport report)
+        {
+            if (AddressablesGeneratorBuildProcessor.ShouldBuildAddressablesForPlayerBuild() &&
+                AddressablesGeneratorSettings.RunGeneratorsDuringBuilds)
+            {
+                RunAllGenerators();
+            }
+        }
+        
         #endregion
     }
 }

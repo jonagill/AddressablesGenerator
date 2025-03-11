@@ -24,11 +24,6 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings))
             {
-                if (AddressablesGeneratorSettings.RunGeneratorsDuringBuilds)
-                {
-                    AddressableAssetGroupGenerator.RunAllGenerators();
-                }
-                
                 if (AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
                 {
                     // Delete any old dependency groups that may still exist (e.g. from a failed build)
@@ -40,7 +35,6 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                     fixDependenciesRule.FixIssues(settings);
                 }
             }
-
         }
 
         public void OnPostprocessBuild(BuildReport report)
