@@ -205,7 +205,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                         if (!EditorUtility.DisplayDialog(
                                 "Addressable assets cannot be in Resources!",
                                 "Addressable assets will not load correctly from Resources folders.\n" +
-                                "Automatically move assets out of Resources?",
+                                $"Automatically move assets (including {filesInResources[0].asset}) out of Resources?",
                                 "Yes, move",
                                 "Cancel"))
                         {
@@ -521,6 +521,6 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             }
         }
 
-        #endregion
+#endregion
     }
 }
