@@ -16,12 +16,12 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// build itself (by not including it in Addressables itself and not referencing it via any other Addressable asset),
     /// or by making it so your direct source references are not compiled at runtime by wrapping them in an #if UNITY_EDITOR directive
     /// </summary>
-    public abstract class ScriptableObjectAddressableGroupGenerator<T> where T : ScriptableObject
+    public abstract class ScriptableObjectAddressableGroupGenerator<T, U> where T : ScriptableObject where U : ScriptableObjectAddressableGroupGenerator<T, U>
     {
         // Should be invoked via an [InitializeOnLoadMethod]
         protected static void InitializeCatalogGenerator()
         {
-            var instance = Activator.CreateInstance<ScriptableObjectAddressableGroupGenerator<T>>();
+            var instance = Activator.CreateInstance<U>();
             
             AddressableGroupGenerator.RegisterGeneratorForType<T>(
                 instance.GenerateGroupNameForAsset,
