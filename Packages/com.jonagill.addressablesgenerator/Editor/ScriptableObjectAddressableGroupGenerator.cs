@@ -18,8 +18,8 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// </summary>
     public abstract class ScriptableObjectAddressableGroupGenerator<T> where T : ScriptableObject
     {
-        [InitializeOnLoadMethod]
-        private static void InitializeCatalogGenerator()
+        // Should be invoked via an [InitializeOnLoadMethod]
+        protected static void InitializeCatalogGenerator()
         {
             var instance = Activator.CreateInstance<ScriptableObjectAddressableGroupGenerator<T>>();
             

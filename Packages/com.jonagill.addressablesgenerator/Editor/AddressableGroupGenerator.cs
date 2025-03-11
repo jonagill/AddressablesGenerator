@@ -14,12 +14,8 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// <summary>
     /// Editor class that handles auto-generating addressable asset groups whenever a configuration file changes
     /// </summary>
-    public class AddressableGroupGenerator : AssetPostprocessor, IPreprocessBuildWithReport
+    public class AddressableGroupGenerator : AssetPostprocessor
     {
-        // Run before AddressablesGeneratorBuildProcessor (callbackOrder 0) and
-        // AddressablesPlayerBuildProcessor (callbackOrder 1)
-        public const int GenerateGroupsCallbackOrder = -1;
-        
         private const string GENERATED_GROUP_SUFFIX = " (Generated)";
 
         [System.Serializable]
@@ -525,21 +521,6 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             }
         }
 
-        #endregion
-
-        #region IPreprocessBuildWithReport
-        
-        int IOrderedCallback.callbackOrder => GenerateGroupsCallbackOrder;
-
-        void IPreprocessBuildWithReport.OnPreprocessBuild(BuildReport report)
-        {
-            if (AddressablesGeneratorBuildProcessor.ShouldBuildAddressablesForPlayerBuild() &&
-                AddressablesGeneratorSettings.RunGeneratorsDuringBuilds)
-            {
-                RunAllGenerators();
-            }
-        }
-        
         #endregion
     }
 }
