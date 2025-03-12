@@ -2,6 +2,31 @@ using UnityEngine;
 
 namespace UnityEditor.AddressableAssets.AddressablesGenerator
 {
+    /// <summary>
+    /// Store the per-project settings for Addressables Generator
+    /// </summary>
+    [FilePath("ProjectSettings/com.jonagill.addressablesgenerator/AddressablesGeneratorSettings.asset", FilePathAttribute.Location.ProjectFolder)]
+    public class AddressablesGeneratorProjectSettings : ScriptableSingleton<AddressablesGeneratorProjectSettings>
+    {
+        [SerializeField] public bool runGeneratorsDuringBuilds = true;
+        [SerializeField] public bool generateDependencyGroupsDuringBuilds = false;
+        
+        void OnDisable()
+        {
+            Save();
+        }
+        
+        public void Save()
+        {
+            Save(true);
+        }
+
+        internal SerializedObject GetSerializedObject()
+        {
+            return new SerializedObject(this);
+        }
+    }
+    
     public static class AddressablesGeneratorSettings
     {
         private class EditorContent
@@ -19,36 +44,33 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 "Note that this will can the asset bundle layout to change from build to build, and may not be appropriate for projects that require a stable bundle layout. " +
                 "(E.g games that ship additional bundle updates separate from the main client build.");
         }
-        
-        private const string RunGeneratorsKey = "AddressablesGeneratorSettings_RunGenerators";
-        private const string GenerateDependencyGroupsKey = "AddressablesGeneratorSettings_GenerateDependencyGroups";
 
         /// <summary>
         /// Whether to automatically run any registered Addressable Group generators during the build process
         /// </summary>
-        public static bool RunGeneratorsDuringBuilds
-        {
-            get => EditorPrefs.GetBool(RunGeneratorsKey, true);
-            set => EditorPrefs.SetBool(RunGeneratorsKey, value);
-        }
+        public static bool RunGeneratorsDuringBuilds => AddressablesGeneratorProjectSettings.instance.runGeneratorsDuringBuilds;
 
-        
         /// <summary>
         /// Whether to automatically generate additional Addressable Groups to manage asset bundle dependencies during the build process
         /// </summary>
-        public static bool GenerateDependencyGroupsDuringBuilds
-        {
-            get => EditorPrefs.GetBool(GenerateDependencyGroupsKey, false);
-            set => EditorPrefs.SetBool(GenerateDependencyGroupsKey, value);
-        }
+        public static bool GenerateDependencyGroupsDuringBuilds => AddressablesGeneratorProjectSettings.instance.generateDependencyGroupsDuringBuilds;
+
+        private static SerializedObject settingsObject;
+        private static SerializedProperty runGeneratorsDuringBuildsProp;
+        private static SerializedProperty generateDependencyGroupsDuringBuildsProp;
         
         [SettingsProvider]
         private static SettingsProvider CreateSettingsProvider()
         {
             var settingsProvider = new SettingsProvider(
                 "Project/Addressables/Addressables Generator", 
-                SettingsScope.Project, 
-                SettingsProvider.GetSearchKeywordsFromGUIContentProperties<EditorContent>()) {
+                SettingsScope.Project,
+                SettingsProvider.GetSearchKeywordsFromGUIContentProperties<EditorContent>())
+            {
+                activateHandler = (SearchContext, rootElement) =>
+                {
+                    OnActivate();
+                },
                 guiHandler = _ =>
                 {
                     PreferencesGUI();
@@ -57,13 +79,32 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             return settingsProvider;
         }
 
+        private static void OnActivate()
+        {
+            AddressablesGeneratorProjectSettings.instance.Save();
+            settingsObject = AddressablesGeneratorProjectSettings.instance.GetSerializedObject();
+            runGeneratorsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.runGeneratorsDuringBuilds));
+            generateDependencyGroupsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.generateDependencyGroupsDuringBuilds));
+        }
+
         private static void PreferencesGUI()
         {
-            var prevWidth = EditorGUIUtility.labelWidth;
-            EditorGUIUtility.labelWidth = EditorContent.ToggleLabelWidth;
-            RunGeneratorsDuringBuilds = EditorGUILayout.Toggle(EditorContent.RunAllGeneratorsLabel, RunGeneratorsDuringBuilds);
-            GenerateDependencyGroupsDuringBuilds = EditorGUILayout.Toggle(EditorContent.GenerateDependencyGroupsLabel, GenerateDependencyGroupsDuringBuilds);
-            EditorGUIUtility.labelWidth = prevWidth;
+            settingsObject.Update();
+
+            using (var changeScope = new EditorGUI.ChangeCheckScope())
+            {
+                var prevWidth = EditorGUIUtility.labelWidth;
+                EditorGUIUtility.labelWidth = EditorContent.ToggleLabelWidth;
+                EditorGUILayout.PropertyField(runGeneratorsDuringBuildsProp, EditorContent.RunAllGeneratorsLabel);
+                EditorGUILayout.PropertyField(generateDependencyGroupsDuringBuildsProp, EditorContent.GenerateDependencyGroupsLabel);
+                EditorGUIUtility.labelWidth = prevWidth;
+                
+                if (changeScope.changed)
+                {
+                    settingsObject.ApplyModifiedProperties();
+                    AddressablesGeneratorProjectSettings.instance.Save();
+                }
+            }
         }
     }
 }
