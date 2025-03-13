@@ -32,55 +32,79 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         {
             // Clear any existing dependency bundles
             DeleteAllDependencyGroups( settings );
+            
+            HashSet<AddressableAssetGroup> groupsToDisable = new HashSet<AddressableAssetGroup>();
+
+            if (AddressablesGeneratorSettings.CalculateDependenciesForNonIncludedGroups)
+            {
+                // Forcibly enable all of our groups so that they are
+                // taken into account as we calculate dependencies
+                foreach (var group in settings.groups)
+                {
+                    var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
+                    if (bundledSchema != null && !bundledSchema.IncludeInBuild)
+                    {
+                        bundledSchema.IncludeInBuild = true;
+                        groupsToDisable.Add(group);
+                    }
+                }
+            }
 
             if (m_ImplicitAssets == null || m_ResultsData == null )
                 CheckForDuplicateDependencies(settings);
 
-            if (m_ImplicitAssets == null || m_ImplicitAssets.Count == 0)
-                return;
-
-            try
+            if (m_ImplicitAssets != null && m_ImplicitAssets.Count > 0)
             {
-                int assetsProcessed = 0;
-                foreach ( var assetGuid in m_ImplicitAssets )
+                try
                 {
-                    var assetGuidString = assetGuid.ToString();
-                    var assetPath = AssetDatabase.GUIDToAssetPath( assetGuidString );
-
-                    if ( EditorUtility.DisplayCancelableProgressBar(
-                            "Moving duplicate dependencies...",
-                            assetPath, assetsProcessed / (float)m_ImplicitAssets.Count ) )
+                    int assetsProcessed = 0;
+                    foreach (var assetGuid in m_ImplicitAssets)
                     {
-                        break;
+                        var assetGuidString = assetGuid.ToString();
+                        var assetPath = AssetDatabase.GUIDToAssetPath(assetGuidString);
+
+                        if (EditorUtility.DisplayCancelableProgressBar(
+                                "Moving duplicate dependencies...",
+                                assetPath, assetsProcessed / (float)m_ImplicitAssets.Count))
+                        {
+                            break;
+                        }
+
+                        // Generate a group name to store this asset based on the groups that depend on it
+                        // This way we can split up dependent assets and make it more likely that we will actually
+                        // remove all references to that group's assets and unload the underlying bundle when
+                        // e.g. changing scenes
+                        var groupsThatDependOnAsset = GetGroupsThatDependOnAsset(assetGuid);
+                        var groupHash = string.Join(",", groupsThatDependOnAsset).GetHashCode();
+                        var groupName = $"{DEPENDENCY_BUNDLE_PREFIX} ({groupHash})";
+
+
+                        // Get the group that we want to move this asset to
+                        var group = settings.FindOrCreateGroup(groupName, readOnly: true);
+
+                        // Mark this group as static content (just replicating the base functionality)
+                        var updateGroupSchema = group.GetSchema<ContentUpdateGroupSchema>();
+                        if (updateGroupSchema != null && !updateGroupSchema.StaticContent)
+                        {
+                            updateGroupSchema.StaticContent = true;
+                        }
+
+                        settings.CreateOrMoveEntry(assetGuid.ToString(), group, false, false);
+
+                        assetsProcessed++;
                     }
-
-                    // Generate a group name to store this asset based on the groups that depend on it
-                    // This way we can split up dependent assets and make it more likely that we will actually
-                    // remove all references to that group's assets and unload the underlying bundle when
-                    // e.g. changing scenes
-                    var groupsThatDependOnAsset = GetGroupsThatDependOnAsset( assetGuid );
-                    var groupHash = string.Join( ",", groupsThatDependOnAsset ).GetHashCode();
-                    var groupName = $"{DEPENDENCY_BUNDLE_PREFIX} ({groupHash})";
-
-
-                    // Get the group that we want to move this asset to
-                    var group = settings.FindOrCreateGroup( groupName, readOnly: true );
-
-                    // Mark this group as static content (just replicating the base functionality)
-                    var updateGroupSchema = group.GetSchema<ContentUpdateGroupSchema>();
-                    if ( updateGroupSchema != null && !updateGroupSchema.StaticContent )
-                    {
-                        updateGroupSchema.StaticContent = true;
-                    }
-
-                    settings.CreateOrMoveEntry( assetGuid.ToString(), group, false, false );
-
-                    assetsProcessed++;
+                }
+                finally
+                {
+                    EditorUtility.ClearProgressBar();
                 }
             }
-            finally
+
+            // Disable any groups that we forcibly enabled earlier
+            foreach (var group in groupsToDisable)
             {
-                EditorUtility.ClearProgressBar();
+                var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
+                bundledSchema.IncludeInBuild = false;
             }
 
             settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);

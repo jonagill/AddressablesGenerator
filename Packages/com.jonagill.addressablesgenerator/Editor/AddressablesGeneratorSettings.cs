@@ -10,6 +10,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     {
         [SerializeField] public bool runGeneratorsDuringBuilds = true;
         [SerializeField] public bool generateDependencyGroupsDuringBuilds = false;
+        [SerializeField] public bool calculateDependenciesForNonIncludedGroups = true;
         
         void OnDisable()
         {
@@ -43,6 +44,12 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 "If true, we will automatically generate optimized dependency groups during the build process to reduce duplicate asset usage. " +
                 "Note that this will can the asset bundle layout to change from build to build, and may not be appropriate for projects that require a stable bundle layout. " +
                 "(E.g games that ship additional bundle updates separate from the main client build.");
+            
+            public static readonly GUIContent CalculateDependenciesForNonIncludedGroupsLabel = new GUIContent(
+                "Calculate dependencies for non-included groups", 
+                "If true, we will consider Addressable Groups with 'Include in Build' set to false when calculating dependencies. " +
+                "This can help prevent issues with duplicate bundles being created when certain groups are included or excluded from builds dynamically. " +
+                "This may cause more dependency bundles to be created than is strictly necessary.");
         }
 
         /// <summary>
@@ -54,10 +61,16 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         /// Whether to automatically generate additional Addressable Groups to manage asset bundle dependencies during the build process
         /// </summary>
         public static bool GenerateDependencyGroupsDuringBuilds => AddressablesGeneratorProjectSettings.instance.generateDependencyGroupsDuringBuilds;
+        
+        /// <summary>
+        /// Whether to consider Addressables Groups with Include in Build marked as false when calculating asset bundle dependencies
+        /// </summary>
+        public static bool CalculateDependenciesForNonIncludedGroups => AddressablesGeneratorProjectSettings.instance.calculateDependenciesForNonIncludedGroups;
 
         private static SerializedObject settingsObject;
         private static SerializedProperty runGeneratorsDuringBuildsProp;
         private static SerializedProperty generateDependencyGroupsDuringBuildsProp;
+        private static SerializedProperty calculateDependenciesForNonIncludedGroupsProp;
         
         [SettingsProvider]
         private static SettingsProvider CreateSettingsProvider()
@@ -85,6 +98,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             settingsObject = AddressablesGeneratorProjectSettings.instance.GetSerializedObject();
             runGeneratorsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.runGeneratorsDuringBuilds));
             generateDependencyGroupsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.generateDependencyGroupsDuringBuilds));
+            calculateDependenciesForNonIncludedGroupsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.calculateDependenciesForNonIncludedGroups));
         }
 
         private static void PreferencesGUI()
@@ -97,6 +111,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 EditorGUIUtility.labelWidth = EditorContent.ToggleLabelWidth;
                 EditorGUILayout.PropertyField(runGeneratorsDuringBuildsProp, EditorContent.RunAllGeneratorsLabel);
                 EditorGUILayout.PropertyField(generateDependencyGroupsDuringBuildsProp, EditorContent.GenerateDependencyGroupsLabel);
+                EditorGUILayout.PropertyField(calculateDependenciesForNonIncludedGroupsProp, EditorContent.CalculateDependenciesForNonIncludedGroupsLabel);
                 EditorGUIUtility.labelWidth = prevWidth;
                 
                 if (changeScope.changed)

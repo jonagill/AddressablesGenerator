@@ -18,7 +18,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
                 AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
             {
-                    GenerateDependencyBundles.GenerateDependencyGroups();
+                GenerateDependencyBundles.GenerateDependencyGroups();
             }
         }
 
