@@ -7,7 +7,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// </summary>
     public class AddressablesGeneratorBuildProcessor : BuildPlayerProcessor
     {
-        // Run before AddressablesGeneratorBuildProcessor (callbackOrder 0) and
+        // Run before AddressablesDependencyBuildProcessor (callbackOrder 0) and
         // AddressablesPlayerBuildProcessor (callbackOrder 1)
         public const int CallbackOrder = -1;
         
