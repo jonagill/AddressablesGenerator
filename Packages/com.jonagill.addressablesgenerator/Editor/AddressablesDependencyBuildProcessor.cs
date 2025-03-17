@@ -8,9 +8,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// </summary>
     public class AddressablesDependencyBuildProcessor : BuildPlayerProcessor, IPostprocessBuildWithReport
     {
-        // Run before AddressablesPlayerBuildProcessor (callbackOrder 1)
-        // which actually builds our bundles.
-        public int callbackOrder => 0;
+        public int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateDependencyGroups;
 
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
