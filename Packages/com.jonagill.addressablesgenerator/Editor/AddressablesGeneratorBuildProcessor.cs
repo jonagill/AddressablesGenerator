@@ -7,8 +7,6 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// </summary>
     public class AddressablesGeneratorBuildProcessor : BuildPlayerProcessor
     {
-        // Run before AddressablesPlayerBuildProcessor (callbackOrder 1)
-        // which actually builds our bundles.
         public int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateGroups;
         
         // Exposes internal-only API for other classes to tie into

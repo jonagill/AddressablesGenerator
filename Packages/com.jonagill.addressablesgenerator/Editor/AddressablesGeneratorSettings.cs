@@ -11,6 +11,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         [SerializeField] public bool runGeneratorsDuringBuilds = true;
         [SerializeField] public bool generateDependencyGroupsDuringBuilds = false;
         [SerializeField] public bool calculateDependenciesForNonIncludedGroups = true;
+        [SerializeField] public bool splitGroupsIntoSingleBundleGroups = false;
         
         void OnDisable()
         {
@@ -50,6 +51,11 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 "If true, we will consider Addressable Groups with 'Include in Build' set to false when calculating dependencies. " +
                 "This can help prevent issues with duplicate bundles being created when certain groups are included or excluded from builds dynamically. " +
                 "This may cause more dependency bundles to be created than is strictly necessary.");
+            
+            public static readonly GUIContent SplitGroupsIntoSingleBundleGroupsLabel = new GUIContent(
+                "Split groups into single bundle groups", 
+                "If true, we will split each group into multiple groups based on their Bundle Packing Mode setting. " +
+                "This will make it so there is one group per asset bundle, which allows for more granular dependency bundle creation.");
         }
 
         /// <summary>
@@ -66,11 +72,17 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         /// Whether to consider Addressables Groups with Include in Build marked as false when calculating asset bundle dependencies
         /// </summary>
         public static bool CalculateDependenciesForNonIncludedGroups => AddressablesGeneratorProjectSettings.instance.calculateDependenciesForNonIncludedGroups;
+        
+        /// <summary>
+        /// Whether to automatically split Addressable Groups into generated groups that each output a single asset bundle during builds
+        /// </summary>
+        public static bool SplitGroupsIntoSingleBundleGroupsDuringBundles => AddressablesGeneratorProjectSettings.instance.splitGroupsIntoSingleBundleGroups;
 
         private static SerializedObject settingsObject;
         private static SerializedProperty runGeneratorsDuringBuildsProp;
         private static SerializedProperty generateDependencyGroupsDuringBuildsProp;
         private static SerializedProperty calculateDependenciesForNonIncludedGroupsProp;
+        private static SerializedProperty splitGroupsIntoSingleBundleGroupsProp;
         
         [SettingsProvider]
         private static SettingsProvider CreateSettingsProvider()
@@ -80,7 +92,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 SettingsScope.Project,
                 SettingsProvider.GetSearchKeywordsFromGUIContentProperties<EditorContent>())
             {
-                activateHandler = (SearchContext, rootElement) =>
+                activateHandler = (searchContext, rootElement) =>
                 {
                     OnActivate();
                 },
@@ -99,6 +111,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             runGeneratorsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.runGeneratorsDuringBuilds));
             generateDependencyGroupsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.generateDependencyGroupsDuringBuilds));
             calculateDependenciesForNonIncludedGroupsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.calculateDependenciesForNonIncludedGroups));
+            splitGroupsIntoSingleBundleGroupsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.splitGroupsIntoSingleBundleGroups));
         }
 
         private static void PreferencesGUI()
@@ -112,6 +125,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 EditorGUILayout.PropertyField(runGeneratorsDuringBuildsProp, EditorContent.RunAllGeneratorsLabel);
                 EditorGUILayout.PropertyField(generateDependencyGroupsDuringBuildsProp, EditorContent.GenerateDependencyGroupsLabel);
                 EditorGUILayout.PropertyField(calculateDependenciesForNonIncludedGroupsProp, EditorContent.CalculateDependenciesForNonIncludedGroupsLabel);
+                EditorGUILayout.PropertyField(splitGroupsIntoSingleBundleGroupsProp, EditorContent.SplitGroupsIntoSingleBundleGroupsLabel);
                 EditorGUIUtility.labelWidth = prevWidth;
                 
                 if (changeScope.changed)
