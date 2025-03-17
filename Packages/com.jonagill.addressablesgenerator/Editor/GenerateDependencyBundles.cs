@@ -55,6 +55,8 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
 
             if (m_ImplicitAssets != null && m_ImplicitAssets.Count > 0)
             {
+                AssetDatabase.StartAssetEditing();
+                
                 try
                 {
                     int assetsProcessed = 0;
@@ -96,6 +98,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 }
                 finally
                 {
+                    AssetDatabase.StopAssetEditing();
                     EditorUtility.ClearProgressBar();
                 }
             }
@@ -143,9 +146,11 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             return groups;
         }
 
-        [MenuItem( "Tools/Addressables Generator/Generate Dependency Groups" )]
+        [MenuItem("Tools/Addressables Generator/Generate Dependency Groups", priority = 20000)]
         public static void GenerateDependencyGroups()
         {
+            AssetDatabase.StartAssetEditing();
+            
             // Delete any old dependency groups that may still exist (e.g. from a failed build)
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             DeleteAllDependencyGroups(settings);
@@ -154,9 +159,11 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             // and put them into their own groups to prevent duplicating those assets
             var fixDependenciesRule = new GenerateDependencyBundles();
             fixDependenciesRule.FixIssues(settings);
+            
+            AssetDatabase.StopAssetEditing();
         }
 
-        [MenuItem( "Tools/Addressables Generator/Delete Dependency Groups" )]
+        [MenuItem("Tools/Addressables Generator/Delete Dependency Groups", priority = 20001)]
         private static void DeleteAllDependencyGroups()
         {
             AssetDatabase.StartAssetEditing();

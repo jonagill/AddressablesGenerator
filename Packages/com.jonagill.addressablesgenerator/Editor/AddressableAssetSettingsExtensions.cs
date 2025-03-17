@@ -41,17 +41,26 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             }
         }
 
-        public static void RemoveEmptyGroups(this AddressableAssetSettings settings, string filter = null)
+        public static void RemoveEmptyGroups(this AddressableAssetSettings settings, System.Func<AddressableAssetGroup, bool> filterFunction = null)
         {
-            for (int i = settings.groups.Count - 1; i >= 0; i--)
+            AssetDatabase.StartAssetEditing();
+
+            try
             {
-                var group = settings.groups[i];
-                if (!group.IsDefaultGroup() &&
-                     group.entries.Count == 0 &&
-                     (string.IsNullOrEmpty(filter) || group.name.Contains(filter)))
+                for (int i = settings.groups.Count - 1; i >= 0; i--)
                 {
-                    settings.RemoveGroup(group);
+                    var group = settings.groups[i];
+                    if (!group.IsDefaultGroup() &&
+                        group.entries.Count == 0 &&
+                        (filterFunction == null || filterFunction(group)))
+                    {
+                        settings.RemoveGroup(group);
+                    }
                 }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
             }
         }
 
@@ -115,6 +124,28 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             return CreateOrMoveEntry(settings, asset.name, asset, group, readOnly, postEvent);
         }
 
+        public static AddressableAssetEntry FindAssetEntry(
+            this AddressableAssetSettings settings,
+            Object asset)
+        {
+            if (asset == null)
+            {
+                Debug.LogError($"Cannot retrieve null assets from the Addressables catalog.");
+                return null;
+            }
+
+            if (asset is Component)
+            {
+                // Always add GameObjects for prefabs, not components
+                asset = ((Component)asset).gameObject;
+            }
+
+            var path = AssetDatabase.GetAssetPath(asset);
+            var guid = AssetDatabase.AssetPathToGUID(path);
+
+            return settings.FindAssetEntry(guid);
+        }
+
         public static AddressableAssetEntry CreateOrMoveEntry(
             this AddressableAssetSettings settings,
             string name,
@@ -159,7 +190,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
 
             return assetEntry;
         }
-
+        
         public static AddressableAssetGroup FindOrCreateGroup(
             this AddressableAssetSettings settings,
             string name,

@@ -322,6 +322,12 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 }
 
                 var entryRequest = entryRequests[i];
+                if (AddressablesGroupSplitterBuildProcessor.AssetIsInSplitGroupForGroup(entryRequest.asset, group))
+                {
+                    // This asset is already split out into a single-bundle group for the group we're attempting to add it to
+                    // Don't move it back
+                    continue;
+                }
 
                 var entry = settings.CreateOrMoveEntry(entryRequest.asset, group, readOnly: makeReadOnly, postEvent: false);
                 if (entry != null)
@@ -343,7 +349,13 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             // Remove empty labels and groups
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             settings.RemoveAllEmptyLabels();
-            settings.RemoveEmptyGroups(GENERATED_GROUP_SUFFIX);
+            settings.RemoveEmptyGroups(group =>
+            {
+                // Remove any empty generated groups (as long as they're not just empty because we split their contents
+                // into multiple single-bundle groups)
+                return group.name.EndsWith(GENERATED_GROUP_SUFFIX) && 
+                    !AddressablesGroupSplitterBuildProcessor.SplitGroupsExistForGroup(group);
+            });
 
             AssetDatabase.SaveAssets();
         }
