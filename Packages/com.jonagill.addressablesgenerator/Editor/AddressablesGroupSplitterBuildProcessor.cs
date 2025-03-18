@@ -118,13 +118,13 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 for (var i = 0; i < cachedGroups.Length; i++)
                 {
                     var group = cachedGroups[i];
-                    if (EditorUtility.DisplayCancelableProgressBar($"Clearing single-bundle groups...", group.name, i / (float)cachedGroups.Length))
-                    {
-                        break;
-                    }
-                    
                     if (TryGetOriginalGroupName(group.name, out var originalGroupName))
                     {
+                        if (EditorUtility.DisplayCancelableProgressBar($"Clearing single-bundle groups...", group.name, i / (float)cachedGroups.Length))
+                        {
+                            break;
+                        }
+                        
                         var originalGroup = settings.FindGroup(originalGroupName);
                         if (originalGroup != null)
                         {
