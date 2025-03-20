@@ -1,0 +1,26 @@
+{
+    "m_Dictionary": {
+        "m_DictionaryValues": [
+            {
+                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                "key": "com.jonagill.addressablesgenerator.RunGeneratorsDuringBuilds",
+                "value": "{\"m_Value\":true}"
+            },
+            {
+                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                "key": "com.jonagill.addressablesgenerator.GenerateDependencyGroupsDuringBuilds",
+                "value": "{\"m_Value\":false}"
+            },
+            {
+                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                "key": "com.jonagill.addressablesgenerator.CalculateDependenciesForNonIncludedGroups",
+                "value": "{\"m_Value\":true}"
+            },
+            {
+                "type": "System.Boolean, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089",
+                "key": "com.jonagill.addressablesgenerator.SplitGroupsIntoSingleBundleGroupsDuringBundles",
+                "value": "{\"m_Value\":false}"
+            }
+        ]
+    }
+}
