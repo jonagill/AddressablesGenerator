@@ -2,14 +2,15 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
-using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
 using Object = System.Object;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Editor class that handles auto-generating addressable asset groups whenever a configuration file changes
@@ -52,7 +53,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             bool makeReadOnly = true)
         {
             // Close the addressables window, which can cause freezes if we add entries while it is open
-            var addressablesWindow = EditorWindow.GetWindow(typeof (GUI.AddressableAssetsWindow));
+            var addressablesWindow = AddressablesInternals.GetAddressablesWindow();
             if (addressablesWindow != null)
             {
                 addressablesWindow.Close();

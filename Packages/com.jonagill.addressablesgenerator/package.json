@@ -5,6 +5,7 @@
   "unity": "2023.1",
   "displayName": "Addressables Generator",
   "dependencies": {
-    "com.unity.addressables" : ""
+    "com.unity.addressables" : "",
+    "com.unity.settings-manager": "2.0.1"
   }
 }

@@ -1,7 +1,9 @@
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Build processor for triggering our Addressable dependency bundle generation
@@ -13,7 +15,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
+            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
                 AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
             {
                 GenerateDependencyBundles.GenerateDependencyGroups();
@@ -26,7 +28,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             // Note that this annoyingly only gets called for a successful build -- errored and canceled builds
             // will still have their bundles changed
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
+            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
                 AddressablesGeneratorSettings.GenerateDependencyGroupsDuringBuilds)
             {
                 GenerateDependencyBundles.DeleteAllDependencyGroups(settings);

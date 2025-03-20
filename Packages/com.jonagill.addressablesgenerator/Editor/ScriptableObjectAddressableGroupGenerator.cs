@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Handles automatically generating Addressables groups for the given ScriptableObject type,

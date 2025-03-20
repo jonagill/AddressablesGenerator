@@ -1,4 +1,4 @@
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     public enum AddressablesGeneratorCallbackOrder
     {

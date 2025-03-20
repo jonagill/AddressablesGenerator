@@ -1,10 +1,13 @@
 using System.Collections.Generic;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.AddressableAssets.Build;
 using UnityEditor.AddressableAssets.Build.AnalyzeRules;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Customized version of the existing CheckBundleDupeDependencies rule that
@@ -14,7 +17,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     /// references to it removed when e.g. changing scenes.
     /// </summary>
     [InitializeOnLoad]
-    public class GenerateDependencyBundles : CheckBundleDupeDependencies
+    public class GenerateDependencyBundles : CheckBundleDupeDependenciesBase
     {
         private const string DEPENDENCY_BUNDLE_PREFIX = "Dependency Bundle";
 
@@ -31,7 +34,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         public override void FixIssues(AddressableAssetSettings settings)
         {
             // Clear any existing dependency bundles
-            DeleteAllDependencyGroups( settings );
+            DeleteAllDependencyGroups(settings);
             
             HashSet<AddressableAssetGroup> groupsToDisable = new HashSet<AddressableAssetGroup>();
 
@@ -50,24 +53,24 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
                 }
             }
 
-            if (m_ImplicitAssets == null || m_ResultsData == null )
+            if (ImplicitAssets == null || ResultsData == null)
                 CheckForDuplicateDependencies(settings);
 
-            if (m_ImplicitAssets != null && m_ImplicitAssets.Count > 0)
+            if (ImplicitAssets != null && ImplicitAssets.Count > 0)
             {
                 AssetDatabase.StartAssetEditing();
                 
                 try
                 {
                     int assetsProcessed = 0;
-                    foreach (var assetGuid in m_ImplicitAssets)
+                    foreach (var assetGuid in ImplicitAssets)
                     {
                         var assetGuidString = assetGuid.ToString();
                         var assetPath = AssetDatabase.GUIDToAssetPath(assetGuidString);
 
                         if (EditorUtility.DisplayCancelableProgressBar(
                                 "Moving duplicate dependencies...",
-                                assetPath, assetsProcessed / (float)m_ImplicitAssets.Count))
+                                assetPath, assetsProcessed / (float)ImplicitAssets.Count))
                         {
                             break;
                         }
@@ -115,12 +118,12 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
 
         public static void DeleteAllDependencyGroups(AddressableAssetSettings settings)
         {
-            for ( var i = settings.groups.Count - 1; i >= 0; i-- )
+            for (var i = settings.groups.Count - 1; i >= 0; i--)
             {
                 var group = settings.groups[i];
-                if ( group.Name.StartsWith( DEPENDENCY_BUNDLE_PREFIX ) )
+                if (group.Name.StartsWith(DEPENDENCY_BUNDLE_PREFIX))
                 {
-                    settings.RemoveGroup( group );
+                    settings.RemoveGroup(group);
                 }
             }
         }
@@ -128,14 +131,14 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         private IEnumerable<string> GetGroupsThatDependOnAsset(GUID assetGuid)
         {
             var groups = new List<string>();
-            foreach ( var result in m_ResultsData )
+            foreach (var result in ResultsData)
             {
-                if ( result.DuplicatedGroupGuid == assetGuid )
+                if (result.DuplicatedGroupGuid == assetGuid)
                 {
                     var groupName = result.Group.Name;
-                    if ( !groups.Contains( groupName ) )
+                    if (!groups.Contains(groupName))
                     {
-                        groups.Add( groupName );
+                        groups.Add(groupName);
                     }
                 }
             }
@@ -169,7 +172,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             AssetDatabase.StartAssetEditing();
 
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            DeleteAllDependencyGroups( settings );
+            DeleteAllDependencyGroups(settings);
 
             AssetDatabase.StopAssetEditing();
         }

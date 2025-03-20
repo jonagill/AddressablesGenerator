@@ -1,6 +1,7 @@
+using UnityEditor;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Store the per-project settings for Addressables Generator

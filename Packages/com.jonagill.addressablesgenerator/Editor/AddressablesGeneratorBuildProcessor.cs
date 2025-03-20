@@ -1,6 +1,8 @@
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.Build;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Build processor for triggering our registered Addressable Group generators
@@ -9,17 +11,10 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
     {
         public int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateGroups;
         
-        // Exposes internal-only API for other classes to tie into
-        public static bool ShouldBuildAddressablesForPlayerBuild()
-        {
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            return AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings);
-        }
-
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
+            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
                 AddressablesGeneratorSettings.RunGeneratorsDuringBuilds)
             {
                 AddressableGroupGenerator.RunAllGenerators();

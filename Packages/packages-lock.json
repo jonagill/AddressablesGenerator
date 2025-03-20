@@ -5,7 +5,8 @@
       "depth": 0,
       "source": "embedded",
       "dependencies": {
-        "com.unity.addressables": ""
+        "com.unity.addressables": "",
+        "com.unity.settings-manager": "2.0.1"
       }
     },
     "com.unity.2d.sprite": {
@@ -122,6 +123,13 @@
         "com.unity.nuget.newtonsoft-json": "3.2.1",
         "com.unity.modules.unitywebrequest": "1.0.0"
       },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.settings-manager": {
+      "version": "2.0.1",
+      "depth": 1,
+      "source": "registry",
+      "dependencies": {},
       "url": "https://packages.unity.com"
     },
     "com.unity.test-framework": {

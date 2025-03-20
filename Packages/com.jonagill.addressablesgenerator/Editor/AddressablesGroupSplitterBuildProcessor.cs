@@ -1,12 +1,15 @@
 using System;
 using System.Linq;
+using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEngine;
 
-namespace UnityEditor.AddressableAssets.AddressablesGenerator
+namespace AddressablesGenerator
 {
     /// <summary>
     /// Build processor for splitting  groups into individual bundles.
@@ -21,7 +24,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
+            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
                 AddressablesGeneratorSettings.SplitGroupsIntoSingleBundleGroupsDuringBundles)
             {
                 SplitGroupsIntoSingleBundleGroups();
@@ -32,7 +35,7 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
         public void OnPostprocessBuild(BuildReport report)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings) && 
+            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
                 AddressablesGeneratorSettings.SplitGroupsIntoSingleBundleGroupsDuringBundles)
             {
                 ClearSingleBundleGroups();
