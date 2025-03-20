@@ -1,140 +1,124 @@
 using UnityEditor;
+using UnityEditor.SettingsManagement;
 using UnityEngine;
 
 namespace AddressablesGenerator
 {
-    /// <summary>
-    /// Store the per-project settings for Addressables Generator
-    /// </summary>
-    [FilePath("ProjectSettings/com.jonagill.addressablesgenerator/AddressablesGeneratorSettings.asset", FilePathAttribute.Location.ProjectFolder)]
-    public class AddressablesGeneratorProjectSettings : ScriptableSingleton<AddressablesGeneratorProjectSettings>
-    {
-        [SerializeField] public bool runGeneratorsDuringBuilds = true;
-        [SerializeField] public bool generateDependencyGroupsDuringBuilds = false;
-        [SerializeField] public bool calculateDependenciesForNonIncludedGroups = true;
-        [SerializeField] public bool splitGroupsIntoSingleBundleGroups = false;
-        
-        void OnDisable()
-        {
-            Save();
-        }
-        
-        public void Save()
-        {
-            Save(true);
-        }
-
-        internal SerializedObject GetSerializedObject()
-        {
-            return new SerializedObject(this);
-        }
-    }
-    
     public static class AddressablesGeneratorSettings
     {
-        private class EditorContent
+        /// <summary>
+        /// Custom UserSetting type that routes to our settings instance
+        /// </summary>
+        private class Setting<T> : UserSetting<T>
         {
-            public const float ToggleLabelWidth = 300f;
+            public Setting(string key, T value, SettingsScope scope = SettingsScope.Project)
+                : base(Instance, key, value, scope)
+            { }
 
-            public static readonly GUIContent RunAllGeneratorsLabel = new GUIContent(
-                "Run all registered generators during builds", 
-                "If true, we will automatically run Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
-                "This should generally be safe, but you may wish to disable it if you want to rely on your generated groups being manually generated and checked into version control.");
-            
-            public static readonly GUIContent GenerateDependencyGroupsLabel = new GUIContent(
-                "Generate dependency bundles during builds", 
-                "If true, we will automatically generate optimized dependency groups during the build process to reduce duplicate asset usage. " +
-                "Note that this will can the asset bundle layout to change from build to build, and may not be appropriate for projects that require a stable bundle layout. " +
-                "(E.g games that ship additional bundle updates separate from the main client build.");
-            
-            public static readonly GUIContent CalculateDependenciesForNonIncludedGroupsLabel = new GUIContent(
-                "Calculate dependencies for non-included groups", 
-                "If true, we will consider Addressable Groups with 'Include in Build' set to false when calculating dependencies. " +
-                "This can help prevent issues with duplicate bundles being created when certain groups are included or excluded from builds dynamically. " +
-                "This may cause more dependency bundles to be created than is strictly necessary.");
-            
-            public static readonly GUIContent SplitGroupsIntoSingleBundleGroupsLabel = new GUIContent(
-                "Split groups into single bundle groups", 
-                "If true, we will split each group into multiple groups based on their Bundle Packing Mode setting. " +
-                "This will make it so there is one group per asset bundle, which allows for more granular dependency bundle creation.");
+            public Setting(Settings settings, string key, T value, SettingsScope scope = SettingsScope.Project)
+                : base(settings, key, value, scope) { }
         }
+        
+        /// <summary>
+        /// Registers our settings for display in the Project Settings GUI
+        /// </summary>
+        static class AddressablesSettingsProvider
+        {
+            private const string SettingsPath = "Project/Addressables";
+            
+            [SettingsProvider]
+            static SettingsProvider CreateSettingsProvider()
+            {
+                var provider = new UserSettingsProvider(SettingsPath,
+                    Instance,
+                    new [] { typeof(AddressablesGeneratorSettings).Assembly },
+                    SettingsScope.Project);
+
+                return provider;
+            }
+        }
+        
+        private const string PackageName = "com.jonagill.addressablesgenerator";
+        private const string CategoryName = "Addressables Generator";
+        
+        private static Settings _instance;
+
+        private static Settings Instance
+        {
+            get
+            {
+                if (_instance == null)
+                    _instance = new Settings(PackageName);
+
+                return _instance;
+            }
+        }
+
+        
+        [UserSetting(
+            category: CategoryName, 
+            title: "Run all registered generators during builds",
+            tooltip: "If true, we will automatically run Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
+                     "This should generally be safe, but you may wish to disable it if you want to rely on your generated groups being manually generated and checked into version control.")]
+        private static Setting<bool> _runGeneratorsDuringBuild = new ($"{PackageName}.RunGeneratorsDuringBuilds", true);
 
         /// <summary>
         /// Whether to automatically run any registered Addressable Group generators during the build process
         /// </summary>
-        public static bool RunGeneratorsDuringBuilds => AddressablesGeneratorProjectSettings.instance.runGeneratorsDuringBuilds;
+        public static bool RunGeneratorsDuringBuilds
+        {
+            get => _runGeneratorsDuringBuild.value;
+            set => _runGeneratorsDuringBuild.SetValue(value, true);
+        }
+        
+        [UserSetting(
+            category: CategoryName,
+            title: "Generate dependency bundles during builds", 
+            tooltip: "If true, we will automatically generate optimized dependency groups during the build process to reduce duplicate asset usage. " +
+                     "Note that this will can the asset bundle layout to change from build to build, and may not be appropriate for projects that require a stable bundle layout. " +
+                     "(E.g games that ship additional bundle updates separate from the main client build.")]
+        private static Setting<bool> _generateDependencyGroupsDuringBuilds = new ($"{PackageName}.GenerateDependencyGroupsDuringBuilds", false);
 
         /// <summary>
         /// Whether to automatically generate additional Addressable Groups to manage asset bundle dependencies during the build process
         /// </summary>
-        public static bool GenerateDependencyGroupsDuringBuilds => AddressablesGeneratorProjectSettings.instance.generateDependencyGroupsDuringBuilds;
+        public static bool GenerateDependencyGroupsDuringBuilds
+        {
+            get => _generateDependencyGroupsDuringBuilds.value;
+            set => _generateDependencyGroupsDuringBuilds.SetValue(value, true);
+        }
         
+        [UserSetting(
+            category: CategoryName,
+            title: "Calculate dependencies for non-included groups",
+            tooltip: "If true, we will consider Addressable Groups with 'Include in Build' set to false when calculating dependencies. " +
+                     "This can help prevent issues with duplicate bundles being created when certain groups are included or excluded from builds dynamically. " +
+                     "This may cause more dependency bundles to be created than is strictly necessary.")]
+        private static Setting<bool> _calculateDependenciesForNonIncludedGroups = new ($"{PackageName}.CalculateDependenciesForNonIncludedGroups", true);
+
         /// <summary>
         /// Whether to consider Addressables Groups with Include in Build marked as false when calculating asset bundle dependencies
         /// </summary>
-        public static bool CalculateDependenciesForNonIncludedGroups => AddressablesGeneratorProjectSettings.instance.calculateDependenciesForNonIncludedGroups;
+        public static bool CalculateDependenciesForNonIncludedGroups
+        {
+            get => _calculateDependenciesForNonIncludedGroups.value;
+            set => _calculateDependenciesForNonIncludedGroups.SetValue(value, true);
+        }
+
+        [UserSetting(
+            category: CategoryName,
+            title: "Split groups into single bundle groups",
+            tooltip: "If true, we will split each group into multiple groups based on their Bundle Packing Mode setting. " +
+                     "This will make it so there is one group per asset bundle, which allows for more granular dependency bundle creation.")]
+        private static Setting<bool> _splitGroupsIntoSingleBundleGroupsDuringBundles = new ($"{PackageName}.SplitGroupsIntoSingleBundleGroupsDuringBundles", false);
         
         /// <summary>
         /// Whether to automatically split Addressable Groups into generated groups that each output a single asset bundle during builds
         /// </summary>
-        public static bool SplitGroupsIntoSingleBundleGroupsDuringBundles => AddressablesGeneratorProjectSettings.instance.splitGroupsIntoSingleBundleGroups;
-
-        private static SerializedObject settingsObject;
-        private static SerializedProperty runGeneratorsDuringBuildsProp;
-        private static SerializedProperty generateDependencyGroupsDuringBuildsProp;
-        private static SerializedProperty calculateDependenciesForNonIncludedGroupsProp;
-        private static SerializedProperty splitGroupsIntoSingleBundleGroupsProp;
-        
-        [SettingsProvider]
-        private static SettingsProvider CreateSettingsProvider()
+        public static bool SplitGroupsIntoSingleBundleGroupsDuringBundles
         {
-            var settingsProvider = new SettingsProvider(
-                "Project/Addressables/Addressables Generator", 
-                SettingsScope.Project,
-                SettingsProvider.GetSearchKeywordsFromGUIContentProperties<EditorContent>())
-            {
-                activateHandler = (searchContext, rootElement) =>
-                {
-                    OnActivate();
-                },
-                guiHandler = _ =>
-                {
-                    PreferencesGUI();
-                }
-            };
-            return settingsProvider;
-        }
-
-        private static void OnActivate()
-        {
-            AddressablesGeneratorProjectSettings.instance.Save();
-            settingsObject = AddressablesGeneratorProjectSettings.instance.GetSerializedObject();
-            runGeneratorsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.runGeneratorsDuringBuilds));
-            generateDependencyGroupsDuringBuildsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.generateDependencyGroupsDuringBuilds));
-            calculateDependenciesForNonIncludedGroupsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.calculateDependenciesForNonIncludedGroups));
-            splitGroupsIntoSingleBundleGroupsProp = settingsObject.FindProperty(nameof(AddressablesGeneratorProjectSettings.splitGroupsIntoSingleBundleGroups));
-        }
-
-        private static void PreferencesGUI()
-        {
-            settingsObject.Update();
-
-            using (var changeScope = new EditorGUI.ChangeCheckScope())
-            {
-                var prevWidth = EditorGUIUtility.labelWidth;
-                EditorGUIUtility.labelWidth = EditorContent.ToggleLabelWidth;
-                EditorGUILayout.PropertyField(runGeneratorsDuringBuildsProp, EditorContent.RunAllGeneratorsLabel);
-                EditorGUILayout.PropertyField(generateDependencyGroupsDuringBuildsProp, EditorContent.GenerateDependencyGroupsLabel);
-                EditorGUILayout.PropertyField(calculateDependenciesForNonIncludedGroupsProp, EditorContent.CalculateDependenciesForNonIncludedGroupsLabel);
-                EditorGUILayout.PropertyField(splitGroupsIntoSingleBundleGroupsProp, EditorContent.SplitGroupsIntoSingleBundleGroupsLabel);
-                EditorGUIUtility.labelWidth = prevWidth;
-                
-                if (changeScope.changed)
-                {
-                    settingsObject.ApplyModifiedProperties();
-                    AddressablesGeneratorProjectSettings.instance.Save();
-                }
-            }
+            get => _splitGroupsIntoSingleBundleGroupsDuringBundles.value;
+            set => _splitGroupsIntoSingleBundleGroupsDuringBundles.SetValue(value, true);
         }
     }
 }
