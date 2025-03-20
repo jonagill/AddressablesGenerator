@@ -381,6 +381,10 @@ namespace AddressablesGenerator
         private static readonly List<string> PathsJustProcessed = new();
 
 
+        /// <summary>
+        /// Register a function that generates a list of requests to add or move given assets to the named group.
+        /// If the returned list is null, the generator is skipped and the group remains unchanged.
+        /// </summary>
         public static void RegisterGeneratorForType<T>(
             string groupName,
             Func<T, IReadOnlyList<AssetEntryRequest>> requestGenerator,
@@ -399,6 +403,10 @@ namespace AddressablesGenerator
                 onAddressablesGeneratedForAsset);
         }
 
+        /// <summary>
+        /// Register a function that generates a list of requests to add or move given assets to the named group(s).
+        /// If the returned list is null, the generator is skipped and the group remains unchanged.
+        /// </summary>
         public static void RegisterGeneratorForType<T>(
             Func<T, string> groupNameGenerator,
             Func<T, IReadOnlyList<AssetEntryRequest>> requestGenerator,
@@ -429,6 +437,9 @@ namespace AddressablesGenerator
             };
         }
 
+        /// <summary>
+        /// Run any registered group generators for the given asset.
+        /// </summary>
         public static void ProcessGeneratorsForPath(string assetPath)
         {
             var paths = new string[1];
@@ -436,6 +447,9 @@ namespace AddressablesGenerator
             ProcessGeneratorsForPaths(paths);
         }
 
+        /// <summary>
+        /// Run any registered group generators for the given assets.
+        /// </summary>
         public static void ProcessGeneratorsForPaths(IReadOnlyList<string> assetPaths)
         {
             for (var i = 0; i < assetPaths.Count; i++)
@@ -455,6 +469,9 @@ namespace AddressablesGenerator
                     var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
                     var groupName = generator.groupNameGenerator.Invoke(asset);
                     var entryRequests = generator.requestGenerator.Invoke(asset);
+                    
+                    // This generator generated no requests and has flagged that it wishes to make no changes currently
+                    if (entryRequests == null) continue;
 
                     AddEntries(
                         groupName,

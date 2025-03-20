@@ -53,7 +53,8 @@ namespace AddressablesGenerator
         protected abstract string GenerateGroupNameForAsset(T asset);
         
         /// <summary>
-        /// Generate the list of individual asset entries to be added to the generated Addressable Group for this asset
+        /// Generate the list of individual asset entries to be added to the generated Addressable Group for this asset.
+        /// Return a null list to mark that we wish generation to be skipped for now.
         /// </summary>
         protected abstract IReadOnlyList<AddressableGroupGenerator.AssetEntryRequest> GenerateAssetRequestsForAsset(T asset);
         
