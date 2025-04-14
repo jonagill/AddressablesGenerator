@@ -9,7 +9,7 @@ namespace AddressablesGenerator
     /// </summary>
     public class AddressablesGeneratorBuildProcessor : BuildPlayerProcessor
     {
-        public int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateGroups;
+        public override int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateGroups;
         
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {

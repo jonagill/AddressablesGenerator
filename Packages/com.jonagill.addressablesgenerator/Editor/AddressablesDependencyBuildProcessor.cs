@@ -10,7 +10,7 @@ namespace AddressablesGenerator
     /// </summary>
     public class AddressablesDependencyBuildProcessor : BuildPlayerProcessor, IPostprocessBuildWithReport
     {
-        public int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateDependencyGroups;
+        public override int callbackOrder => (int) AddressablesGeneratorCallbackOrder.GenerateDependencyGroups;
 
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {

@@ -17,7 +17,7 @@ namespace AddressablesGenerator
     /// </summary>
     public class AddressablesGroupSplitterBuildProcessor : BuildPlayerProcessor, IPostprocessBuildWithReport
     {
-        public int callbackOrder => (int) AddressablesGeneratorCallbackOrder.SplitGroups;
+        public override int callbackOrder => (int) AddressablesGeneratorCallbackOrder.SplitGroups;
 
         private const string SplitGroupSeparator = "_Split_";
         
