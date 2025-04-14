@@ -52,11 +52,31 @@ namespace AddressablesGenerator
             bool clearGroup = false,
             bool makeReadOnly = true)
         {
-            // Close the addressables window, which can cause freezes if we add entries while it is open
-            var addressablesWindow = AddressablesInternals.GetAddressablesWindow();
-            if (addressablesWindow != null)
+            try
             {
-                addressablesWindow.Close();
+                AddEntriesInternal(groupName, entryRequests, packingMode, clearGroup, makeReadOnly);
+            }
+            finally
+            {
+                EditorUtility.ClearProgressBar();
+            }
+        }
+
+        private static void AddEntriesInternal(
+            string groupName,
+            IReadOnlyList<AssetEntryRequest> entryRequests,
+            BundledAssetGroupSchema.BundlePackingMode packingMode,
+            bool clearGroup = false,
+            bool makeReadOnly = true)
+        {
+            // Close the addressables window, which can cause freezes if we add entries while it is open
+            if (AddressablesInternals.IsAddressablesWindowOpen())
+            {
+                var addressablesWindow = AddressablesInternals.GetAddressablesWindow();
+                if (addressablesWindow != null)
+                {
+                    addressablesWindow.Close();
+                }
             }
 
             // Sort all our entry requests for consistent ordering during serialization
@@ -171,7 +191,6 @@ namespace AddressablesGenerator
                 if (EditorUtility.DisplayCancelableProgressBar("Validating Addressable asset requests...",
                         entryRequests[i].asset.ToString(), i / (float)entryRequests.Count))
                 {
-                    EditorUtility.ClearProgressBar();
                     isCanceled = true;
                     break;
                 }
@@ -218,8 +237,6 @@ namespace AddressablesGenerator
                     filesInResources.Add(entryRequest);
                 }
             }
-
-            EditorUtility.ClearProgressBar();
         }
 
         private static void RenameInvalidAssets(
@@ -317,7 +334,6 @@ namespace AddressablesGenerator
                 if (EditorUtility.DisplayCancelableProgressBar("Processing Addressable asset requests...",
                         entryRequests[i].asset.ToString(), i / (float)entryRequests.Count))
                 {
-                    EditorUtility.ClearProgressBar();
                     isCanceled = true;
                     break;
                 }
@@ -341,7 +357,6 @@ namespace AddressablesGenerator
                 }
             }
 
-            EditorUtility.ClearProgressBar();
             AssetDatabase.StopAssetEditing();
         }
 
@@ -452,39 +467,48 @@ namespace AddressablesGenerator
         /// </summary>
         public static void ProcessGeneratorsForPaths(IReadOnlyList<string> assetPaths)
         {
-            for (var i = 0; i < assetPaths.Count; i++)
+            AssetDatabase.StartAssetEditing();
+
+            try
             {
-                var assetPath = assetPaths[i];
-                if (EditorUtility.DisplayCancelableProgressBar(
-                        "Running Addressables group generators...",
-                        assetPath,
-                        i / (float)assetPaths.Count))
+
+                for (var i = 0; i < assetPaths.Count; i++)
                 {
-                    break;
-                }
+                    var assetPath = assetPaths[i];
+                    if (EditorUtility.DisplayCancelableProgressBar(
+                            "Running Addressables group generators...",
+                            assetPath,
+                            i / (float)assetPaths.Count))
+                    {
+                        break;
+                    }
 
-                var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-                if (PerTypeGenerators.TryGetValue(type, out var generator))
-                {
-                    var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
-                    var groupName = generator.groupNameGenerator.Invoke(asset);
-                    var entryRequests = generator.requestGenerator.Invoke(asset);
-                    
-                    // This generator generated no requests and has flagged that it wishes to make no changes currently
-                    if (entryRequests == null) continue;
+                    var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
+                    if (PerTypeGenerators.TryGetValue(type, out var generator))
+                    {
+                        var asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+                        var groupName = generator.groupNameGenerator.Invoke(asset);
+                        var entryRequests = generator.requestGenerator.Invoke(asset);
 
-                    AddEntries(
-                        groupName,
-                        entryRequests,
-                        generator.packingMode,
-                        generator.clearGroup,
-                        generator.makeReadOnly);
+                        // This generator generated no requests and has flagged that it wishes to make no changes currently
+                        if (entryRequests == null) continue;
 
-                    generator.onAddressablesGeneratedForAsset?.Invoke(asset);
+                        AddEntries(
+                            groupName,
+                            entryRequests,
+                            generator.packingMode,
+                            generator.clearGroup,
+                            generator.makeReadOnly);
+
+                        generator.onAddressablesGeneratedForAsset?.Invoke(asset);
+                    }
                 }
             }
-
-            EditorUtility.ClearProgressBar();
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                EditorUtility.ClearProgressBar();
+            }
         }
 
         static void OnPostprocessAllAssets(

@@ -12,6 +12,11 @@ namespace UnityEditor.AddressableAssets.AddressablesGenerator
             return AddressablesPlayerBuildProcessor.ShouldBuildAddressablesForPlayerBuild(settings);
         }
 
+        public static bool IsAddressablesWindowOpen()
+        {
+            return EditorWindow.HasOpenInstances<GUI.AddressableAssetsWindow>();
+        }
+
         public static EditorWindow GetAddressablesWindow()
         {
             return EditorWindow.GetWindow(typeof(GUI.AddressableAssetsWindow));
