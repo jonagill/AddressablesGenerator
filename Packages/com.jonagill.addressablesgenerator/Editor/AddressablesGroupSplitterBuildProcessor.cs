@@ -134,7 +134,7 @@ namespace AddressablesGenerator
                             var cachedEntries = group.entries.ToArray();
                             foreach (var entry in cachedEntries)
                             {
-                                settings.CreateOrMoveEntry(entry.guid, originalGroup);
+                                settings.CreateOrMoveEntry(entry.guid, originalGroup, readOnly: entry.ReadOnly);
                             }
 
                             if (group.entries.Count == 0)
@@ -167,7 +167,7 @@ namespace AddressablesGenerator
                 if (string.IsNullOrEmpty(entry.guid)) continue;
                 var splitGroupName = GetGeneratedGroupName(group.name, entry.guid);
                 var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true);
-                settings.CreateOrMoveEntry(entry.guid, splitGroup);
+                settings.CreateOrMoveEntry(entry.guid, splitGroup, readOnly: entry.ReadOnly);
             }
         }
         
@@ -180,7 +180,7 @@ namespace AddressablesGenerator
                 var labelHash = labels.GetHashCode().ToString(); // Hash our label collection for brevity and obfuscation
                 var splitGroupName = GetGeneratedGroupName(group.name, labelHash);
                 var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true);
-                settings.CreateOrMoveEntry(entry.guid, splitGroup);
+                settings.CreateOrMoveEntry(entry.guid, splitGroup, readOnly: entry.ReadOnly);
             }
         }
 
