@@ -66,10 +66,10 @@ namespace AddressablesGenerator
         private static void SplitGroupsIntoSingleBundleGroups()
         {
             AssetDatabase.StartAssetEditing();
-
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
+            
             try
             {
-                var settings = AddressableAssetSettingsDefaultObject.Settings;
                 var cachedGroups = settings.groups.ToArray();
                 for (var i = 0; i < cachedGroups.Length; i++)
                 {
@@ -86,12 +86,12 @@ namespace AddressablesGenerator
                     {
                         break;
                     }
-
+                    
                     switch (bundledSchema.BundleMode)
                     {
                         case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
                             // This group will already make one bundle -- nothing to do
-                            continue;
+                            break;
                         case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
                             SplitGroupByAsset(settings, group);
                             break;
@@ -102,9 +102,11 @@ namespace AddressablesGenerator
                             throw new ArgumentException(nameof(bundledSchema.BundleMode));
                     }
                 }
+                
             }
             finally
             {
+                settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
                 AssetDatabase.StopAssetEditing();
             }
         }
@@ -113,10 +115,10 @@ namespace AddressablesGenerator
         private static void ClearSingleBundleGroups()
         {
             AssetDatabase.StartAssetEditing();
+            var settings = AddressableAssetSettingsDefaultObject.Settings;
 
             try
             {
-                var settings = AddressableAssetSettingsDefaultObject.Settings;
                 var cachedGroups = settings.groups.ToArray();
                 for (var i = 0; i < cachedGroups.Length; i++)
                 {
@@ -134,7 +136,7 @@ namespace AddressablesGenerator
                             var cachedEntries = group.entries.ToArray();
                             foreach (var entry in cachedEntries)
                             {
-                                settings.CreateOrMoveEntry(entry.guid, originalGroup, readOnly: entry.ReadOnly);
+                                settings.MoveEntry(entry, originalGroup, readOnly: entry.ReadOnly, postEvent: false);
                             }
 
                             if (group.entries.Count == 0)
@@ -152,9 +154,11 @@ namespace AddressablesGenerator
                         }
                     }
                 }
+                
             }
             finally
             {
+                settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
                 AssetDatabase.StopAssetEditing();
             }
         }
@@ -165,9 +169,10 @@ namespace AddressablesGenerator
             foreach (var entry in cachedEntries)
             {
                 if (string.IsNullOrEmpty(entry.guid)) continue;
+                
                 var splitGroupName = GetGeneratedGroupName(group.name, entry.guid);
                 var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true);
-                settings.CreateOrMoveEntry(entry.guid, splitGroup, readOnly: entry.ReadOnly);
+                settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }
         
@@ -180,7 +185,7 @@ namespace AddressablesGenerator
                 var labelHash = labels.GetHashCode().ToString(); // Hash our label collection for brevity and obfuscation
                 var splitGroupName = GetGeneratedGroupName(group.name, labelHash);
                 var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true);
-                settings.CreateOrMoveEntry(entry.guid, splitGroup, readOnly: entry.ReadOnly);
+                settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }
 
