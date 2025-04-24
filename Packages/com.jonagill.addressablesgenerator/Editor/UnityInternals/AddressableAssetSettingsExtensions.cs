@@ -11,7 +11,7 @@ namespace AddressablesGenerator
     /// </summary>
     public static class AddressableAssetSettingsExtensions
     {
-        public static void RemoveAllEmptyLabels(this AddressableAssetSettings settings)
+        public static void RemoveAllEmptyLabels(this AddressableAssetSettings settings, bool postEvent = true)
         {
             var allLabels = settings.GetLabels();
             var allAssets = settings.GetAllAssetEntries();
@@ -20,12 +20,15 @@ namespace AddressablesGenerator
             {
                 if (!allAssets.Any(a => a.labels.Contains(label)))
                 {
-                    settings.RemoveLabel(label);
+                    settings.RemoveLabel(label, postEvent);
                 }
             }
         }
 
-        public static void RemoveAllEntriesFromGroup(this AddressableAssetSettings settings, AddressableAssetGroup group)
+        public static void RemoveAllEntriesFromGroup(
+            this AddressableAssetSettings settings, 
+            AddressableAssetGroup group,
+            bool postEvent = true)
         {
             var entries = group.entries.ToArray();
 
@@ -37,12 +40,15 @@ namespace AddressablesGenerator
                 {
                     if (entry.parentGroup != null)
                         entry.parentGroup.RemoveAssetEntry(entry, true);
-                    settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, true, false);
+                    settings.SetDirty(AddressableAssetSettings.ModificationEvent.EntryRemoved, entry, postEvent, false);
                 }
             }
         }
 
-        public static void RemoveEmptyGroups(this AddressableAssetSettings settings, System.Func<AddressableAssetGroup, bool> filterFunction = null)
+        public static void RemoveEmptyGroups(
+            this AddressableAssetSettings settings, 
+            System.Func<AddressableAssetGroup, bool> filterFunction = null,
+            bool postEvent = true)
         {
             AssetDatabase.StartAssetEditing();
 
@@ -55,7 +61,7 @@ namespace AddressablesGenerator
                         group.entries.Count == 0 &&
                         (filterFunction == null || filterFunction(group)))
                     {
-                        settings.RemoveGroup(group);
+                        settings.RemoveGroupInternal(group, true, postEvent);
                     }
                 }
             }
@@ -195,7 +201,8 @@ namespace AddressablesGenerator
         public static AddressableAssetGroup FindOrCreateGroup(
             this AddressableAssetSettings settings,
             string name,
-            bool readOnly = true)
+            bool readOnly = true,
+            bool postEvent = true)
         {
             AddressableAssetGroup group = settings.FindGroup(name);
             if (group != null)
@@ -205,7 +212,18 @@ namespace AddressablesGenerator
 
             var template =
                 (AddressableAssetGroupTemplate) settings.GroupTemplateObjects.First(t => t.name == "Packed Assets");
-            return settings.CreateGroup(name, false, readOnly, false, null, template.GetTypes());
+            return settings.CreateGroup(name, false, readOnly, postEvent, null, template.GetTypes());
+        }
+
+        /// <summary>
+        /// Version of RemoveGroup() that exposes the postEvent parameter
+        /// </summary>
+        public static void RemoveGroup(
+            this AddressableAssetSettings settings,
+            AddressableAssetGroup group,
+            bool postEvent = true)
+        {
+            settings.RemoveGroupInternal(group, true, postEvent);
         }
     }
 }

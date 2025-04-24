@@ -135,7 +135,7 @@ namespace AddressablesGenerator
             bool makeReadOnly)
         {
             // Tag all our generated groups with the same suffix so we can find them programmatically
-            var group = settings.FindOrCreateGroup(groupName + GENERATED_GROUP_SUFFIX, readOnly: makeReadOnly);
+            var group = settings.FindOrCreateGroup(groupName + GENERATED_GROUP_SUFFIX, readOnly: makeReadOnly, postEvent: false);
 
             if (makeReadOnly && !group.ReadOnly)
             {
@@ -146,7 +146,7 @@ namespace AddressablesGenerator
 
             if (clearGroup)
             {
-                settings.RemoveAllEntriesFromGroup(group);
+                settings.RemoveAllEntriesFromGroup(group, postEvent: false);
             }
 
             var bundledSchema = group.GetSchema(typeof(BundledAssetGroupSchema)) as BundledAssetGroupSchema;
@@ -362,17 +362,21 @@ namespace AddressablesGenerator
 
         private static void PostUpdateCleanup()
         {
+            AssetDatabase.StartAssetEditing();
+            
             // Remove empty labels and groups
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            settings.RemoveAllEmptyLabels();
+            settings.RemoveAllEmptyLabels(postEvent: false);
             settings.RemoveEmptyGroups(group =>
             {
                 // Remove any empty generated groups (as long as they're not just empty because we split their contents
                 // into multiple single-bundle groups)
                 return group.name.EndsWith(GENERATED_GROUP_SUFFIX) && 
                     !AddressablesGroupSplitterBuildProcessor.SplitGroupsExistForGroup(group);
-            });
-
+            }, postEvent: false);
+            
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
+            AssetDatabase.StopAssetEditing();
             AssetDatabase.SaveAssets();
         }
 

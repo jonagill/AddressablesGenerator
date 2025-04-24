@@ -141,7 +141,7 @@ namespace AddressablesGenerator
 
                             if (group.entries.Count == 0)
                             {
-                                settings.RemoveGroup(group);
+                                settings.RemoveGroup(group, postEvent: false);
                             }
                             else
                             {
@@ -171,7 +171,7 @@ namespace AddressablesGenerator
                 if (string.IsNullOrEmpty(entry.guid)) continue;
                 
                 var splitGroupName = GetGeneratedGroupName(group.name, entry.guid);
-                var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true);
+                var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true, postEvent: false);
                 settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }
@@ -184,7 +184,7 @@ namespace AddressablesGenerator
                 var labels = string.Join(',', entry.labels);
                 var labelHash = labels.GetHashCode().ToString(); // Hash our label collection for brevity and obfuscation
                 var splitGroupName = GetGeneratedGroupName(group.name, labelHash);
-                var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true);
+                var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true, postEvent: false);
                 settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }

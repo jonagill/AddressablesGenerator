@@ -85,7 +85,7 @@ namespace AddressablesGenerator
 
 
                         // Get the group that we want to move this asset to
-                        var group = settings.FindOrCreateGroup(groupName, readOnly: true);
+                        var group = settings.FindOrCreateGroup(groupName, readOnly: true, postEvent: false);
 
                         // Mark this group as static content (just replicating the base functionality)
                         var updateGroupSchema = group.GetSchema<ContentUpdateGroupSchema>();
@@ -118,14 +118,19 @@ namespace AddressablesGenerator
 
         public static void DeleteAllDependencyGroups(AddressableAssetSettings settings)
         {
+            AssetDatabase.StartAssetEditing();
+            
             for (var i = settings.groups.Count - 1; i >= 0; i--)
             {
                 var group = settings.groups[i];
                 if (group.Name.StartsWith(DEPENDENCY_BUNDLE_PREFIX))
                 {
-                    settings.RemoveGroup(group);
+                    settings.RemoveGroup(group, postEvent: false);
                 }
             }
+            
+            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
+            AssetDatabase.StopAssetEditing();
         }
 
         private IEnumerable<string> GetGroupsThatDependOnAsset(GUID assetGuid)
