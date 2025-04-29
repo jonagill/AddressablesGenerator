@@ -107,18 +107,18 @@ namespace AddressablesGenerator
 
         [UserSetting(
             category: CategoryName,
-            title: "Split groups into single bundle groups",
+            title: "Split groups into single bundles during builds",
             tooltip: "If true, we will split each group into multiple groups based on their Bundle Packing Mode setting. " +
                      "This will make it so there is one group per asset bundle, which allows for more granular dependency bundle creation.")]
-        private static Setting<bool> _splitGroupsIntoSingleBundleGroupsDuringBundles = new ($"{PackageName}.SplitGroupsIntoSingleBundleGroupsDuringBundles", false);
+        private static Setting<bool> _splitGroupsIntoSingleBundleGroupsDuringBuilds = new ($"{PackageName}.SplitGroupsIntoSingleBundleGroupsDuringBundles", false);
         
         /// <summary>
         /// Whether to automatically split Addressable Groups into generated groups that each output a single asset bundle during builds
         /// </summary>
-        public static bool SplitGroupsIntoSingleBundleGroupsDuringBundles
+        public static bool SplitGroupsIntoSingleBundleGroupsDuringBuilds
         {
-            get => _splitGroupsIntoSingleBundleGroupsDuringBundles.value;
-            set => _splitGroupsIntoSingleBundleGroupsDuringBundles.SetValue(value, true);
+            get => _splitGroupsIntoSingleBundleGroupsDuringBuilds.value;
+            set => _splitGroupsIntoSingleBundleGroupsDuringBuilds.SetValue(value, true);
         }
     }
 }

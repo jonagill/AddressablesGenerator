@@ -25,7 +25,7 @@ namespace AddressablesGenerator
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
-                AddressablesGeneratorSettings.SplitGroupsIntoSingleBundleGroupsDuringBundles)
+                AddressablesGeneratorSettings.SplitGroupsIntoSingleBundleGroupsDuringBuilds)
             {
                 SplitGroupsIntoSingleBundleGroups();
             }
@@ -36,7 +36,7 @@ namespace AddressablesGenerator
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
-                AddressablesGeneratorSettings.SplitGroupsIntoSingleBundleGroupsDuringBundles)
+                AddressablesGeneratorSettings.SplitGroupsIntoSingleBundleGroupsDuringBuilds)
             {
                 ClearSingleBundleGroups();
             }
@@ -63,7 +63,7 @@ namespace AddressablesGenerator
         }
 
         [MenuItem("Tools/Addressables Generator/Split Groups into Single Bundle Groups", priority = 10000)]
-        private static void SplitGroupsIntoSingleBundleGroups()
+        public static void SplitGroupsIntoSingleBundleGroups()
         {
             AssetDatabase.StartAssetEditing();
             var settings = AddressableAssetSettingsDefaultObject.Settings;
@@ -112,7 +112,7 @@ namespace AddressablesGenerator
         }
 
         [MenuItem("Tools/Addressables Generator/Clear Single Bundle Groups", priority = 10001)]
-        private static void ClearSingleBundleGroups()
+        public static void ClearSingleBundleGroups()
         {
             AssetDatabase.StartAssetEditing();
             var settings = AddressableAssetSettingsDefaultObject.Settings;
