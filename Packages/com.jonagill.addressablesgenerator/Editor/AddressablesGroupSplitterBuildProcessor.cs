@@ -80,6 +80,12 @@ namespace AddressablesGenerator
                         continue;
                     }
 
+                    if (!bundledSchema.IncludeInBuild)
+                    {
+                        // Don't bother splitting a group that we're not going to build anyway
+                        continue;
+                    }
+
                     if (EditorUtility.DisplayCancelableProgressBar($"Splitting Addressables groups into single bundle groups...", 
                             group.name, 
                             i / (float)cachedGroups.Length))
