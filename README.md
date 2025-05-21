@@ -25,6 +25,72 @@ All Addressable Group generation is handled by the class `AddressableGroupGenera
 
 An alternative method could be to create a `BuildProcessor` class that calls `AddEntries()` right before we build Addressables. This class should have a callback order less than or equal to `AddressablesGeneratorBuildProcessor.CallbackOrder` to ensure that your entries get added before we generate dependency groups and build asset bundles.
 
+# Example
+Here is a minimal example of a `ScriptableObjectAddressableGroupGenerator` that takes a ScriptableObject containing an editor-assigned array of prefabs, adds those prefabs to an Addressable Group named "Enemy Prefabs", and then creates AssetReferences to each of those prefabs for use in gameplay. By configuring the settings of your generator and the `AssetEntryRequests` it constructs, you can modify the settings of the generated group and assets to add labels, build as single or individual bundles, and so on.
+
+```
+public class EnemyPrefabs : ScriptableObject
+{
+  // Used in gameplay
+  [SerializeField, HideInInspector] public AssetReferenceGameObject[] enemyPrefabReferences;
+  
+  #if UNITY_EDITOR
+
+  // Assigned via the inspector. Marked as #if UNITY_EDITOR so that we don't contain these direct references
+  // in the build, which would cause us to load all of our prefab data as soon as anyone referenced this asset
+  // An alternative might be to split your editor and runtime data across two separate ScriptableObjects,
+  // only one of which is referenced at runtime.
+  [SerializeField] public GameObject[] editorSourcePrefabs;
+
+  public void EditorCopySourcePrefabsToReferences()
+  {
+      enemyPrefabReferences = editorSourcePrefabs.Select(prefab =>
+      {
+          string guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(prefab));
+          return new AssetReferenceGameObject(guid);
+      }).ToArray();
+  }
+
+  #endif
+}
+
+public class EnemyPrefabAddressablesGroupGenerator : ScriptableObjectAddressableGroupGenerator<EnemyPrefabs, EnemyPrefabAddressablesGroupGenerator>
+{
+  [InitializeOnLoadMethod]
+  private static void InitializeOnLoad()
+  {
+      // Must be called by all implementers of ScriptableObjectAddressableGroupGenerator to add them to the system
+      RegisterGenerator();
+  }
+  
+  protected override BundledAssetGroupSchema.BundlePackingMode BundlePackingMode => BundledAssetGroupSchema.BundlePackingMode.PackSeparately;
+  protected override bool ClearGroup => true;
+  
+  protected override string GenerateGroupNameForAsset(EnemyPrefabs asset)
+  {
+      return "Enemy Prefabs";
+  }
+
+  protected override IReadOnlyList<AddressableGroupGenerator.AssetEntryRequest> GenerateAssetRequestsForAsset(EnemyPrefabs asset)
+  {
+      List<AddressableGroupGenerator.AssetEntryRequest> requests = new();
+      requests.AddRange(asset.editorSourcePrefabs.Select(prefab => new AddressableGroupGenerator.AssetEntryRequest()
+      {
+          asset = prefab
+      }));
+      
+      return requests;
+  }
+
+  protected override void OnAddressablesGeneratedForAsset(EnemyPrefabs asset)
+  {
+      asset.EditorCopySourcePrefabsToReferences();
+      EditorUtility.SetDirty(asset);
+  }
+}
+
+```
+
 ## Run a build
 By default, registered generators will run during a build if that build is also set to generate Addressables. The build can also be configured to automatically generate dependency bundles as part of the build process (see **Settings** below).
 
