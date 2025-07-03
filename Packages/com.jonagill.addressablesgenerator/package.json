@@ -1,11 +1,11 @@
 {
   "name": "com.jonagill.addressablesgenerator",
   "description": "Utility for programatically generating Addressable Groups and managing their dependencies.",
-  "version": "0.1.12",
+  "version": "0.1.13",
   "unity": "2023.1",
   "displayName": "Addressables Generator",
   "dependencies": {
-    "com.unity.addressables": "",
+    "com.unity.addressables": "1.20.5",
     "com.unity.settings-manager": "2.0.1"
   }
 }
