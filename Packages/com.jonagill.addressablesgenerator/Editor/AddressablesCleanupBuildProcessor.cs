@@ -3,6 +3,7 @@ using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
+using UnityEditor.SceneManagement;
 
 namespace AddressablesGenerator
 {
@@ -38,6 +39,11 @@ namespace AddressablesGenerator
             {
                 AddressablesGroupSplitterBuildProcessor.ClearSingleBundleGroups();
             }
+            
+            // Prompt the user to save any open scenes
+            // otherwise they may be prompted after the processor runs, pausing the build
+            // which can be very annoying if you have already walked away from your machine
+            EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
             
             AssetDatabase.StopAssetEditing();
         }
