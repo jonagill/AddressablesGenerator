@@ -47,7 +47,6 @@ namespace AddressablesGenerator
             
             AssetDatabase.StopAssetEditing();
         }
-        
                 
         public void OnPostprocessBuild(BuildReport report) { }
     }

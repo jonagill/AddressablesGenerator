@@ -178,6 +178,14 @@ namespace AddressablesGenerator
                 
                 var splitGroupName = GetGeneratedGroupName(group.name, entry.guid);
                 var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true, postEvent: false);
+                
+                // Make sure we're using the desired bundle naming mode
+                var bundledAssetGroupSchema = splitGroup.GetSchema<BundledAssetGroupSchema>();
+                if (bundledAssetGroupSchema != null)
+                {
+                    bundledAssetGroupSchema.BundleNaming = AddressablesGeneratorSettings.GeneratedBundleNamingMode;
+                }
+                
                 settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }
@@ -191,6 +199,14 @@ namespace AddressablesGenerator
                 var labelHash = labels.GetHashCode().ToString(); // Hash our label collection for brevity and obfuscation
                 var splitGroupName = GetGeneratedGroupName(group.name, labelHash);
                 var splitGroup = settings.FindOrCreateGroup(splitGroupName, readOnly: true, postEvent: false);
+                
+                // Make sure we're using the desired bundle naming mode
+                var bundledAssetGroupSchema = splitGroup.GetSchema<BundledAssetGroupSchema>();
+                if (bundledAssetGroupSchema != null)
+                {
+                    bundledAssetGroupSchema.BundleNaming = AddressablesGeneratorSettings.GeneratedBundleNamingMode;
+                }
+                
                 settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }

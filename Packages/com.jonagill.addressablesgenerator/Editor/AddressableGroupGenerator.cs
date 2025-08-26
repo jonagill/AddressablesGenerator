@@ -153,6 +153,7 @@ namespace AddressablesGenerator
             if (bundledSchema != null)
             {
                 bundledSchema.BundleMode = packingMode;
+                bundledSchema.BundleNaming = AddressablesGeneratorSettings.GeneratedBundleNamingMode;
 
                 if (bundledSchema.LoadPath.GetName(settings) == AddressableAssetSettings.kLocalLoadPath)
                 {

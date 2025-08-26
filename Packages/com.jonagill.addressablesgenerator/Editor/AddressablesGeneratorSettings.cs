@@ -1,4 +1,5 @@
 using UnityEditor;
+using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.SettingsManagement;
 using UnityEngine;
 
@@ -119,6 +120,21 @@ namespace AddressablesGenerator
         {
             get => _splitGroupsIntoSingleBundleGroupsDuringBuilds.value;
             set => _splitGroupsIntoSingleBundleGroupsDuringBuilds.SetValue(value, true);
+        }
+        
+        [UserSetting(
+            category: CategoryName,
+            title: "Generated Bundle Naming Mode",
+            tooltip: "How to name bundles created by the bundle generation, bundle splitting, and dependency generation steps.")]
+        private static Setting<BundledAssetGroupSchema.BundleNamingStyle> _generatedBundleNamingMode = new ($"{PackageName}.GeneratedBundleNamingMode", BundledAssetGroupSchema.BundleNamingStyle.NoHash);
+        
+        /// <summary>
+        /// How to name bundles created by the bundle generation, bundle splitting, and dependency generation steps
+        /// </summary>
+        public static BundledAssetGroupSchema.BundleNamingStyle GeneratedBundleNamingMode
+        {
+            get => _generatedBundleNamingMode.value;
+            set => _generatedBundleNamingMode.SetValue(value, true);
         }
     }
 }

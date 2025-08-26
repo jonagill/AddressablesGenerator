@@ -82,10 +82,16 @@ namespace AddressablesGenerator
                         var groupsThatDependOnAsset = GetGroupsThatDependOnAsset(assetGuid);
                         var groupHash = string.Join(",", groupsThatDependOnAsset).GetHashCode();
                         var groupName = $"{DEPENDENCY_BUNDLE_PREFIX} ({groupHash})";
-
-
+                        
                         // Get the group that we want to move this asset to
                         var group = settings.FindOrCreateGroup(groupName, readOnly: true, postEvent: false);
+                        
+                        // Make sure we're using the desired bundle naming mode
+                        var bundledAssetGroupSchema = group.GetSchema<BundledAssetGroupSchema>();
+                        if (bundledAssetGroupSchema != null)
+                        {
+                            bundledAssetGroupSchema.BundleNaming =  AddressablesGeneratorSettings.GeneratedBundleNamingMode;
+                        }
 
                         // Mark this group as static content (just replicating the base functionality)
                         var updateGroupSchema = group.GetSchema<ContentUpdateGroupSchema>();
