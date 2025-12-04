@@ -189,7 +189,7 @@ namespace AddressablesGenerator
             var guid = AssetDatabase.AssetPathToGUID(path);
 
             var assetEntry = settings.FindAssetEntry(guid);
-            if (assetEntry == null || assetEntry.parentGroup != group)
+            if (assetEntry == null || assetEntry.parentGroup != group || assetEntry.ReadOnly != readOnly)
             {
                 assetEntry = settings.CreateOrMoveEntry(guid, group, readOnly: readOnly, postEvent: postEvent);
                 assetEntry.address = name;
