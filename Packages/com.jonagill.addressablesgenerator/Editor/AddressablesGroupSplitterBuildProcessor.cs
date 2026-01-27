@@ -12,7 +12,7 @@ using UnityEngine;
 namespace AddressablesGenerator
 {
     /// <summary>
-    /// Build processor for splitting  groups into individual bundles.
+    /// Build processor for splitting groups into individual bundles.
     /// This helps calculate more accurate dependency information 
     /// </summary>
     public class AddressablesGroupSplitterBuildProcessor : BuildPlayerProcessor, IPostprocessBuildWithReport
@@ -196,6 +196,9 @@ namespace AddressablesGenerator
                     bundledAssetGroupSchema.BundleNaming = AddressablesGeneratorSettings.GeneratedBundleNamingMode;
                 }
                 
+                // Copy over any schemas that we've been told to preserve
+                AddressablesEditorHelpers.CopySchemasToGroup<ICopySchemaToSingleBundleGroups>(group, splitGroup);
+                
                 settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }
         }
@@ -216,6 +219,9 @@ namespace AddressablesGenerator
                 {
                     bundledAssetGroupSchema.BundleNaming = AddressablesGeneratorSettings.GeneratedBundleNamingMode;
                 }
+                
+                // Copy over any schemas that we've been told to preserve
+                AddressablesEditorHelpers.CopySchemasToGroup<ICopySchemaToSingleBundleGroups>(group, splitGroup);
                 
                 settings.MoveEntry(entry, splitGroup, readOnly: entry.ReadOnly, postEvent: false);
             }

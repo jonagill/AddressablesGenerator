@@ -1,5 +1,6 @@
 using UnityEditor;
 using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using Object = UnityEngine.Object;
@@ -31,6 +32,22 @@ namespace AddressablesGenerator
             }
 
             return new AssetReferenceGameObject( assetGuid );
+        }
+
+        public static void CopySchemasToGroup<T>(AddressableAssetGroup from, AddressableAssetGroup to) where T : class
+        {
+            foreach (var schema in from.Schemas)
+            {
+                if (schema is T)
+                {
+                    // If our target doesn't have a schema of this type, copy it over
+                    var schemaType = schema.GetType();
+                    if (to.GetSchema(schemaType) == null)
+                    {
+                        to.AddSchema(schema);
+                    }
+                }
+            }
         }
 
         private static string GetAssetGuid(Object asset)

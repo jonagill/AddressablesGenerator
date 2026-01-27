@@ -3,7 +3,6 @@ using UnityEditor;
 using UnityEditor.AddressableAssets;
 using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.AddressableAssets.Build;
-using UnityEditor.AddressableAssets.Build.AnalyzeRules;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 
@@ -105,7 +104,7 @@ namespace AddressablesGenerator
                             {
                                 updateGroupSchema.StaticContent = true;
                             }
-
+                            
                             settings.CreateOrMoveEntry(assetGuid.ToString(), group, false, false);
 
                             assetsProcessed++;
