@@ -6,8 +6,11 @@ using UnityEditor.AddressableAssets.AddressablesGenerator;
 using UnityEditor.AddressableAssets.Settings;
 using UnityEditor.AddressableAssets.Settings.GroupSchemas;
 using UnityEditor.Build;
-using UnityEditor.Build.Reporting;
 using UnityEngine;
+
+#if !UNITY_6000_3_OR_NEWER
+using UnityEditor.Build.Reporting;
+#endif
 
 namespace AddressablesGenerator
 {
@@ -15,7 +18,12 @@ namespace AddressablesGenerator
     /// Build processor for splitting groups into individual bundles.
     /// This helps calculate more accurate dependency information 
     /// </summary>
-    public class AddressablesGroupSplitterBuildProcessor : BuildPlayerProcessor, IPostprocessBuildWithReport
+    public class AddressablesGroupSplitterBuildProcessor : BuildPlayerProcessor,
+#if UNITY_6000_3_OR_NEWER
+        IPostprocessBuildWithContext
+#else
+        IPostprocessBuildWithReport
+#endif
     {
         public override int callbackOrder => (int) AddressablesGeneratorCallbackOrder.SplitGroups;
 
@@ -31,8 +39,21 @@ namespace AddressablesGenerator
             }
         }
         
-                
+#if UNITY_6000_3_OR_NEWER
+        public void OnPostprocessBuild(BuildCallbackContext context)
+        {
+            PostBuildCleanup();
+        }
+#else
         public void OnPostprocessBuild(BuildReport report)
+        {
+            // Note that this annoyingly only gets called for a successful build -- errored and canceled builds
+            // will still have their bundles changed
+            PostBuildCleanup();
+        }
+#endif
+                
+        private void PostBuildCleanup()
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
             if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
