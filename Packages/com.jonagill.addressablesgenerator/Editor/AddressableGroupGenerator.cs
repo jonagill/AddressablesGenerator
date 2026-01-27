@@ -26,8 +26,8 @@ namespace AddressablesGenerator
             public string label;
         }
 
-#region Static API
-
+#region Add Entries
+        
         public static void AddEntries(
             string groupName,
             IReadOnlyList<UnityEngine.Object> assets,
@@ -69,61 +69,73 @@ namespace AddressablesGenerator
             bool clearGroup = false,
             bool makeReadOnly = true)
         {
-            // Close the addressables window, which can cause freezes if we add entries while it is open
-            if (AddressablesInternals.IsAddressablesWindowOpen())
+            var token = new string($"{nameof(AddEntriesInternal)} {groupName}");
+            
+            try
             {
-                var addressablesWindow = AddressablesInternals.GetAddressablesWindow();
-                if (addressablesWindow != null)
+                MarkStartedProcessingGroups(token);
+                
+                // Close the addressables window, which can cause freezes if we add entries while it is open
+                if (AddressablesInternals.IsAddressablesWindowOpen())
                 {
-                    addressablesWindow.Close();
+                    var addressablesWindow = AddressablesInternals.GetAddressablesWindow();
+                    if (addressablesWindow != null)
+                    {
+                        addressablesWindow.Close();
+                    }
+                }
+
+                // Sort all our entry requests for consistent ordering during serialization
+                entryRequests = entryRequests
+                    .OrderBy(er => er.asset != null ? er.asset.name : string.Empty)
+                    .ToArray();
+
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+
+                List<AssetEntryRequest> filesWithInvalidCharactersInName = new List<AssetEntryRequest>();
+                List<AssetEntryRequest> filesInResources = new List<AssetEntryRequest>();
+                HashSet<string> resourceFolders = new HashSet<string>();
+
+                AddressableAssetGroup group =
+                    ConfigureAddressableGroup(settings, groupName, packingMode, clearGroup, makeReadOnly);
+
+                ValidateAssetRequests(
+                    groupName,
+                    entryRequests,
+                    filesWithInvalidCharactersInName,
+                    filesInResources,
+                    out bool isCanceled);
+
+                if (isCanceled)
+                {
+                    return;
+                }
+
+                RenameInvalidAssets(filesWithInvalidCharactersInName);
+                MoveAssetsInResources(filesInResources, resourceFolders);
+                DeleteEmptyResourceFolders(resourceFolders);
+
+                AddAssetsToGroup(settings, entryRequests, group, makeReadOnly, out isCanceled);
+                if (isCanceled)
+                {
+                    return;
+                }
+
+                if (BuildPipeline.isBuildingPlayer)
+                {
+                    // If we're about to build the player, process changes immediately
+                    PostUpdateCleanup();
+                }
+                else
+                {
+                    // Otherwise, wait until the next update to batch together multiple changes into one cleanup pass
+                    EditorApplication.delayCall -= PostUpdateCleanup;
+                    EditorApplication.delayCall += PostUpdateCleanup;
                 }
             }
-
-            // Sort all our entry requests for consistent ordering during serialization
-            entryRequests = entryRequests
-                .OrderBy(er => er.asset != null ? er.asset.name : string.Empty)
-                .ToArray();
-
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-
-            List<AssetEntryRequest> filesWithInvalidCharactersInName = new List<AssetEntryRequest>();
-            List<AssetEntryRequest> filesInResources = new List<AssetEntryRequest>();
-            HashSet<string> resourceFolders = new HashSet<string>();
-
-            AddressableAssetGroup group = ConfigureAddressableGroup(settings, groupName, packingMode, clearGroup, makeReadOnly);
-
-            ValidateAssetRequests(
-                groupName,
-                entryRequests,
-                filesWithInvalidCharactersInName,
-                filesInResources,
-                out bool isCanceled);
-
-            if (isCanceled)
+            finally
             {
-                return;
-            }
-
-            RenameInvalidAssets(filesWithInvalidCharactersInName);
-            MoveAssetsInResources(filesInResources, resourceFolders);
-            DeleteEmptyResourceFolders(resourceFolders);
-
-            AddAssetsToGroup(settings, entryRequests, group, makeReadOnly, out isCanceled);
-            if (isCanceled)
-            {
-                return;
-            }
-
-            if (BuildPipeline.isBuildingPlayer)
-            {
-                // If we're about to build the player, process changes immediately
-                PostUpdateCleanup();
-            }
-            else
-            {
-                // Otherwise, wait until the next update to batch together multiple changes into one cleanup pass
-                EditorApplication.delayCall -= PostUpdateCleanup;
-                EditorApplication.delayCall += PostUpdateCleanup;
+                MarkFinishedProcessingGroups(token);
             }
         }
 
@@ -364,21 +376,49 @@ namespace AddressablesGenerator
         private static void PostUpdateCleanup()
         {
             AssetDatabase.StartAssetEditing();
-            
-            // Remove empty labels and groups
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            settings.RemoveAllEmptyLabels(postEvent: false);
-            settings.RemoveEmptyGroups(group =>
+
+            var token = new string(nameof(PostUpdateCleanup));
+            MarkStartedProcessingGroups(token);
+
+            try
             {
-                // Remove any empty generated groups (as long as they're not just empty because we split their contents
-                // into multiple single-bundle groups)
-                return group.name.EndsWith(GENERATED_GROUP_SUFFIX) && 
-                    !AddressablesGroupSplitterBuildProcessor.SplitGroupsExistForGroup(group);
-            }, postEvent: false);
-            
-            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
-            AssetDatabase.StopAssetEditing();
-            AssetDatabase.SaveAssets();
+
+                // Remove empty labels and groups
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+                settings.RemoveAllEmptyLabels(postEvent: false);
+                settings.RemoveEmptyGroups(group =>
+                {
+                    // Remove any empty generated groups (as long as they're not just empty because we split their contents
+                    // into multiple single-bundle groups)
+                    return group.name.EndsWith(GENERATED_GROUP_SUFFIX) &&
+                           !AddressablesGroupSplitterBuildProcessor.SplitGroupsExistForGroup(group);
+                }, postEvent: false);
+
+                settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                MarkFinishedProcessingGroups(token);
+            }
+        }
+
+#endregion
+
+#region State Tracking
+
+        private static readonly HashSet<object> _processRequests = new();
+        public static bool IsProcessingGroups => _processRequests.Count > 0;
+
+        internal static void MarkStartedProcessingGroups(object token)
+        {
+            _processRequests.Add(token);
+        }
+
+        internal static void MarkFinishedProcessingGroups(object token)
+        {
+            _processRequests.Remove(token);
         }
 
 #endregion
@@ -476,7 +516,6 @@ namespace AddressablesGenerator
 
             try
             {
-
                 for (var i = 0; i < assetPaths.Count; i++)
                 {
                     var assetPath = assetPaths[i];

@@ -67,6 +67,9 @@ namespace AddressablesGenerator
         {
             AssetDatabase.StartAssetEditing();
             var settings = AddressableAssetSettingsDefaultObject.Settings;
+
+            var token = new string(nameof(SplitGroupsIntoSingleBundleGroups));
+            AddressableGroupGenerator.MarkStartedProcessingGroups(token);
             
             try
             {
@@ -114,6 +117,8 @@ namespace AddressablesGenerator
             {
                 settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
                 AssetDatabase.StopAssetEditing();
+                
+                AddressableGroupGenerator.MarkFinishedProcessingGroups(token);
             }
         }
 
@@ -122,6 +127,9 @@ namespace AddressablesGenerator
         {
             AssetDatabase.StartAssetEditing();
             var settings = AddressableAssetSettingsDefaultObject.Settings;
+            
+            var token = new string(nameof(ClearSingleBundleGroups));
+            AddressableGroupGenerator.MarkStartedProcessingGroups(token);
 
             try
             {
@@ -166,6 +174,8 @@ namespace AddressablesGenerator
             {
                 settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
                 AssetDatabase.StopAssetEditing();
+                
+                AddressableGroupGenerator.MarkFinishedProcessingGroups(token);
             }
         }
 

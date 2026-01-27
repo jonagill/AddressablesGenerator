@@ -33,109 +33,131 @@ namespace AddressablesGenerator
 
         public override void FixIssues(AddressableAssetSettings settings)
         {
-            // Clear any existing dependency bundles
-            DeleteAllDependencyGroups(settings);
-            
-            HashSet<AddressableAssetGroup> groupsToDisable = new HashSet<AddressableAssetGroup>();
+            var token = new string($"{nameof(GenerateDependencyBundles)} {nameof(FixIssues)}");
+            AddressableGroupGenerator.MarkStartedProcessingGroups(token);
 
-            if (AddressablesGeneratorSettings.CalculateDependenciesForNonIncludedGroups)
+            try
             {
-                // Forcibly enable all of our groups so that they are
-                // taken into account as we calculate dependencies
-                foreach (var group in settings.groups)
+                // Clear any existing dependency bundles
+                DeleteAllDependencyGroups(settings);
+
+                HashSet<AddressableAssetGroup> groupsToDisable = new HashSet<AddressableAssetGroup>();
+
+                if (AddressablesGeneratorSettings.CalculateDependenciesForNonIncludedGroups)
+                {
+                    // Forcibly enable all of our groups so that they are
+                    // taken into account as we calculate dependencies
+                    foreach (var group in settings.groups)
+                    {
+                        var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
+                        if (bundledSchema != null && !bundledSchema.IncludeInBuild)
+                        {
+                            bundledSchema.IncludeInBuild = true;
+                            groupsToDisable.Add(group);
+                        }
+                    }
+                }
+
+                if (ImplicitAssets == null || ResultsData == null)
+                    CheckForDuplicateDependencies(settings);
+
+                if (ImplicitAssets != null && ImplicitAssets.Count > 0)
+                {
+                    AssetDatabase.StartAssetEditing();
+
+                    try
+                    {
+                        int assetsProcessed = 0;
+                        foreach (var assetGuid in ImplicitAssets)
+                        {
+                            var assetGuidString = assetGuid.ToString();
+                            var assetPath = AssetDatabase.GUIDToAssetPath(assetGuidString);
+
+                            if (EditorUtility.DisplayCancelableProgressBar(
+                                    "Moving duplicate dependencies...",
+                                    assetPath, assetsProcessed / (float)ImplicitAssets.Count))
+                            {
+                                break;
+                            }
+
+                            // Generate a group name to store this asset based on the groups that depend on it
+                            // This way we can split up dependent assets and make it more likely that we will actually
+                            // remove all references to that group's assets and unload the underlying bundle when
+                            // e.g. changing scenes
+                            var groupsThatDependOnAsset = GetGroupsThatDependOnAsset(assetGuid);
+                            var groupHash = string.Join(",", groupsThatDependOnAsset).GetHashCode();
+                            var groupName = $"{DEPENDENCY_BUNDLE_PREFIX} ({groupHash})";
+
+                            // Get the group that we want to move this asset to
+                            var group = settings.FindOrCreateGroup(groupName, readOnly: true, postEvent: false);
+
+                            // Make sure we're using the desired bundle naming mode
+                            var bundledAssetGroupSchema = group.GetSchema<BundledAssetGroupSchema>();
+                            if (bundledAssetGroupSchema != null)
+                            {
+                                bundledAssetGroupSchema.BundleNaming =
+                                    AddressablesGeneratorSettings.GeneratedBundleNamingMode;
+                            }
+
+                            // Mark this group as static content (just replicating the base functionality)
+                            var updateGroupSchema = group.GetSchema<ContentUpdateGroupSchema>();
+                            if (updateGroupSchema != null && !updateGroupSchema.StaticContent)
+                            {
+                                updateGroupSchema.StaticContent = true;
+                            }
+
+                            settings.CreateOrMoveEntry(assetGuid.ToString(), group, false, false);
+
+                            assetsProcessed++;
+                        }
+                    }
+                    finally
+                    {
+                        AssetDatabase.StopAssetEditing();
+                        EditorUtility.ClearProgressBar();
+                    }
+                }
+
+                // Disable any groups that we forcibly enabled earlier
+                foreach (var group in groupsToDisable)
                 {
                     var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
-                    if (bundledSchema != null && !bundledSchema.IncludeInBuild)
-                    {
-                        bundledSchema.IncludeInBuild = true;
-                        groupsToDisable.Add(group);
-                    }
+                    bundledSchema.IncludeInBuild = false;
                 }
+
+                settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
             }
-
-            if (ImplicitAssets == null || ResultsData == null)
-                CheckForDuplicateDependencies(settings);
-
-            if (ImplicitAssets != null && ImplicitAssets.Count > 0)
+            finally
             {
-                AssetDatabase.StartAssetEditing();
-                
-                try
-                {
-                    int assetsProcessed = 0;
-                    foreach (var assetGuid in ImplicitAssets)
-                    {
-                        var assetGuidString = assetGuid.ToString();
-                        var assetPath = AssetDatabase.GUIDToAssetPath(assetGuidString);
-
-                        if (EditorUtility.DisplayCancelableProgressBar(
-                                "Moving duplicate dependencies...",
-                                assetPath, assetsProcessed / (float)ImplicitAssets.Count))
-                        {
-                            break;
-                        }
-
-                        // Generate a group name to store this asset based on the groups that depend on it
-                        // This way we can split up dependent assets and make it more likely that we will actually
-                        // remove all references to that group's assets and unload the underlying bundle when
-                        // e.g. changing scenes
-                        var groupsThatDependOnAsset = GetGroupsThatDependOnAsset(assetGuid);
-                        var groupHash = string.Join(",", groupsThatDependOnAsset).GetHashCode();
-                        var groupName = $"{DEPENDENCY_BUNDLE_PREFIX} ({groupHash})";
-                        
-                        // Get the group that we want to move this asset to
-                        var group = settings.FindOrCreateGroup(groupName, readOnly: true, postEvent: false);
-                        
-                        // Make sure we're using the desired bundle naming mode
-                        var bundledAssetGroupSchema = group.GetSchema<BundledAssetGroupSchema>();
-                        if (bundledAssetGroupSchema != null)
-                        {
-                            bundledAssetGroupSchema.BundleNaming =  AddressablesGeneratorSettings.GeneratedBundleNamingMode;
-                        }
-
-                        // Mark this group as static content (just replicating the base functionality)
-                        var updateGroupSchema = group.GetSchema<ContentUpdateGroupSchema>();
-                        if (updateGroupSchema != null && !updateGroupSchema.StaticContent)
-                        {
-                            updateGroupSchema.StaticContent = true;
-                        }
-
-                        settings.CreateOrMoveEntry(assetGuid.ToString(), group, false, false);
-
-                        assetsProcessed++;
-                    }
-                }
-                finally
-                {
-                    AssetDatabase.StopAssetEditing();
-                    EditorUtility.ClearProgressBar();
-                }
+                AddressableGroupGenerator.MarkFinishedProcessingGroups(token);
             }
-
-            // Disable any groups that we forcibly enabled earlier
-            foreach (var group in groupsToDisable)
-            {
-                var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
-                bundledSchema.IncludeInBuild = false;
-            }
-
-            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
         }
 
         public static void DeleteAllDependencyGroups(AddressableAssetSettings settings)
         {
             AssetDatabase.StartAssetEditing();
-            
-            for (var i = settings.groups.Count - 1; i >= 0; i--)
+
+            var token = new string(nameof(DeleteAllDependencyGroups));
+            AddressableGroupGenerator.MarkStartedProcessingGroups(token);
+
+            try
             {
-                var group = settings.groups[i];
-                if (group.Name.StartsWith(DEPENDENCY_BUNDLE_PREFIX))
+                for (var i = settings.groups.Count - 1; i >= 0; i--)
                 {
-                    settings.RemoveGroup(group, postEvent: false);
+                    var group = settings.groups[i];
+                    if (group.Name.StartsWith(DEPENDENCY_BUNDLE_PREFIX))
+                    {
+                        settings.RemoveGroup(group, postEvent: false);
+                    }
                 }
+
+                settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
             }
-            
-            settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
+            finally
+            {
+                AddressableGroupGenerator.MarkFinishedProcessingGroups(token);
+            }
+
             AssetDatabase.StopAssetEditing();
         }
 
