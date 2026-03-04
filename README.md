@@ -13,7 +13,7 @@ It also provides the ability to automatically generate dependency asset bundles 
 5. Click Install
 
 ### Installation via OpenUPM
-To install Autofill via [OpenUPM](https://openupm.com/packages/com.jonagill.autofill/):
+To install via [OpenUPM](https://openupm.com/packages/com.jonagill.autofill/):
 
 1. Open `Edit/Project Settings/Package Manager`
 2. Add a new Scoped Registry (or edit the existing OpenUPM entry) to read:
