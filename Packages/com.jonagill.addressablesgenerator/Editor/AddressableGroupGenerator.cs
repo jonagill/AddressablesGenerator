@@ -572,7 +572,8 @@ namespace AddressablesGenerator
             foreach (var assetPath in importedAssets)
             {
                 var type = AssetDatabase.GetMainAssetTypeAtPath(assetPath);
-                if (PerTypeGenerators.ContainsKey(type) &&
+                if (type != null &&
+                    PerTypeGenerators.ContainsKey(type) &&
                      !PathsToProcess.Contains(assetPath) &&
                      !PathsJustProcessed.Contains(assetPath))
                 {
