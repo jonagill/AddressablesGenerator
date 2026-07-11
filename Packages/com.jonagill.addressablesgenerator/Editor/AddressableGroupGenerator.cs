@@ -373,6 +373,39 @@ namespace AddressablesGenerator
             AssetDatabase.StopAssetEditing();
         }
 
+        private static void ClearGeneratedGroups()
+        {
+            AssetDatabase.StartAssetEditing();
+
+            var token = new string(nameof(PostUpdateCleanup));
+            MarkStartedProcessingGroups(token);
+
+            try
+            {
+                bool anyRemoved = false;
+                var settings = AddressableAssetSettingsDefaultObject.Settings;
+                foreach (var group in settings.groups)
+                {
+                    if (group.name.EndsWith(GENERATED_GROUP_SUFFIX))
+                    {
+                        settings.RemoveAllEntriesFromGroup(group, postEvent: false);
+                        anyRemoved = true;
+                    }
+                }
+
+                if (anyRemoved)
+                {
+                    settings.SetDirty(AddressableAssetSettings.ModificationEvent.BatchModification, null, true, true);
+                    AssetDatabase.StopAssetEditing();
+                    AssetDatabase.SaveAssets();         
+                }
+            }
+            finally
+            {
+                MarkFinishedProcessingGroups(token);
+            }
+        }
+
         private static void PostUpdateCleanup()
         {
             AssetDatabase.StartAssetEditing();
@@ -604,8 +637,8 @@ namespace AddressablesGenerator
         {
             PathsJustProcessed.Clear();
         }
-
-        [MenuItem("Tools/Addressables Generator/Run All Generators")]
+        
+        [MenuItem("Tools/Addressables Generator/Run All Generators", priority = 100)]
         public static void RunAllGenerators()
         {
             foreach (var kvp in PerTypeGenerators)
@@ -618,6 +651,13 @@ namespace AddressablesGenerator
 
                 ProcessGeneratorsForPaths(assetPaths);
             }
+        }
+        
+        [MenuItem("Tools/Addressables Generator/Clear Groups and Run Generators", priority =  101)]
+        public static void ClearGroupsAndRunAllGenerators()
+        {
+            ClearGeneratedGroups();
+            RunAllGenerators();
         }
 
 #endregion

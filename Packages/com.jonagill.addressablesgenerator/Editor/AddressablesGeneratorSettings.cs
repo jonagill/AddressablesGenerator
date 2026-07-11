@@ -7,6 +7,13 @@ namespace AddressablesGenerator
 {
     public static class AddressablesGeneratorSettings
     {
+        public enum RunDuringBuildOptions
+        {
+            DoNotRun = 0,
+            RunGenerators = 5,
+            CleanGroupsAndRunGenerators = 10
+        }
+        
         /// <summary>
         /// Custom UserSetting type that routes to our settings instance
         /// </summary>
@@ -58,18 +65,19 @@ namespace AddressablesGenerator
         
         [UserSetting(
             category: CategoryName, 
-            title: "Run all registered generators during builds",
-            tooltip: "If true, we will automatically run Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
+            title: "Generate groups during builds",
+            tooltip: "If set to run, we will automatically run Addressable Group generators registered to AddressableAssetGroupGenerator automatically during builds. " +
+                     "We can also automatically clear out the generated groups before running, ensuring there are no stale assets in the groups.  " +
                      "This should generally be safe, but you may wish to disable it if you want to rely on your generated groups being manually generated and checked into version control.")]
-        private static Setting<bool> _runGeneratorsDuringBuild = new ($"{PackageName}.RunGeneratorsDuringBuilds", true);
+        private static Setting<RunDuringBuildOptions> _runDuringBuildBehaviour = new ($"{PackageName}.RunDuringBuildBehaviour", RunDuringBuildOptions.CleanGroupsAndRunGenerators);
 
         /// <summary>
         /// Whether to automatically run any registered Addressable Group generators during the build process
         /// </summary>
-        public static bool RunGeneratorsDuringBuilds
+        public static RunDuringBuildOptions RunDuringBuildBehaviour
         {
-            get => _runGeneratorsDuringBuild.value;
-            set => _runGeneratorsDuringBuild.SetValue(value, true);
+            get => _runDuringBuildBehaviour.value;
+            set => _runDuringBuildBehaviour.SetValue(value, true);
         }
         
         [UserSetting(

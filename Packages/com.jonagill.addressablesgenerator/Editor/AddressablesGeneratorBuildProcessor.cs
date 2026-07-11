@@ -14,10 +14,20 @@ namespace AddressablesGenerator
         public override void PrepareForBuild(BuildPlayerContext buildPlayerContext)
         {
             var settings = AddressableAssetSettingsDefaultObject.Settings;
-            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings) && 
-                AddressablesGeneratorSettings.RunGeneratorsDuringBuilds)
+            if (AddressablesInternals.ShouldBuildAddressablesForPlayerBuild(settings))
             {
-                AddressableGroupGenerator.RunAllGenerators();
+                switch (AddressablesGeneratorSettings.RunDuringBuildBehaviour)
+                {
+                    case AddressablesGeneratorSettings.RunDuringBuildOptions.RunGenerators:
+                        AddressableGroupGenerator.RunAllGenerators();
+                        break;
+                    case AddressablesGeneratorSettings.RunDuringBuildOptions.CleanGroupsAndRunGenerators:
+                        AddressableGroupGenerator.ClearGroupsAndRunAllGenerators();
+                        break;
+                    case AddressablesGeneratorSettings.RunDuringBuildOptions.DoNotRun:
+                    default:
+                        return;
+                }
             }
         }
     }
