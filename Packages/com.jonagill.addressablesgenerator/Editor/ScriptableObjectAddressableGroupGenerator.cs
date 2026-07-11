@@ -27,7 +27,7 @@ namespace AddressablesGenerator
                 instance.GenerateGroupNameForAsset,
                 instance.GenerateAssetRequestsForAsset,
                 instance.BundlePackingMode,
-                instance.ClearGroup,
+                instance.ClearGroupBeforeGenerating,
                 onAddressablesGeneratedForAsset: obj =>
                 {
                     if (obj is T asset)
@@ -43,9 +43,15 @@ namespace AddressablesGenerator
         protected abstract BundledAssetGroupSchema.BundlePackingMode BundlePackingMode { get; }
         
         /// <summary>
-        /// Whether to clear the Addressable Group each time we generate assets for this asset type
+        /// Whether to clear the Addressable Group each time we generate assets for this asset type.
+        /// This is triggered each time we save and import a relevant asset of this type.
+        /// As such, it should generally only be true for "singleton" assets where only one exists in the entire project.
+        /// <br/>
+        /// Other asset types should not clear on each generation. This does run the risk of stale assets hanging around
+        /// inside a group, but this can be fixed by calling <see cref="AddressableGroupGenerator.ClearGroupsAndRunAllGenerators"/>,
+        /// either from the menu item or during the pre-build step. <see cref="AddressablesGeneratorSettings.RunDuringBuildBehaviour"/>
         /// </summary>
-        protected abstract bool ClearGroup { get; }
+        protected abstract bool ClearGroupBeforeGenerating { get; }
         
         /// <summary>
         /// What name to use for the Addressable Group generated for this asset
