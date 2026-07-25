@@ -376,7 +376,7 @@ namespace AddressablesGenerator
                         continue;
                     }
 
-                    if (Getpriority(existingEntry.parentGroup) >= Getpriority(group))
+                    if (GetPriority(existingEntry.parentGroup) >= GetPriority(group))
                     {
                         // This asset is in a higher priority group -- don't steal it from this group
                         continue;
@@ -461,7 +461,7 @@ namespace AddressablesGenerator
             }
         }
 
-        private static int Getpriority(AddressableAssetGroup group)
+        private static int GetPriority(AddressableAssetGroup group)
         {
             var groupSettingsSchema = group.GetSchema<GeneratedGroupSettingsSchema>();
             if (groupSettingsSchema != null)

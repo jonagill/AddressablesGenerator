@@ -24,10 +24,12 @@ namespace AddressablesGenerator
             var instance = Activator.CreateInstance<U>();
             
             AddressableGroupGenerator.RegisterGeneratorForType<T>(
-                instance.GenerateGroupNameForAsset,
-                instance.GenerateAssetRequestsForAsset,
-                instance.BundlePackingMode,
-                instance.ClearGroupBeforeGenerating,
+                groupNameGenerator: instance.GenerateGroupNameForAsset,
+                requestGenerator: instance.GenerateAssetRequestsForAsset,
+                packingMode: instance.BundlePackingMode,
+                clearGroup: instance.ClearGroupBeforeGenerating,
+                makeReadOnly: true,
+                priority: instance.GroupPriority,
                 onAddressablesGeneratedForAsset: obj =>
                 {
                     if (obj is T asset)
