@@ -69,16 +69,8 @@ namespace AddressablesGenerator
             return settings.groups.Any(g => g.name.StartsWith($"{group.name}{SplitGroupSeparator}"));
         }
 
-        public static bool AssetIsInSplitGroupForGroup(UnityEngine.Object asset, AddressableAssetGroup group)
+        public static bool EntryIsInSplitGroupForGroup(AddressableAssetEntry entry, AddressableAssetGroup group)
         {
-            var settings = AddressableAssetSettingsDefaultObject.Settings;
-            
-            var entry = settings.FindAssetEntry(asset);
-            if (entry == null)
-            {
-                return false;
-            }
-
             var entryGroup = entry.parentGroup;
             return TryGetOriginalGroupName(entryGroup.name, out var originalName) && originalName == group.name;
         }

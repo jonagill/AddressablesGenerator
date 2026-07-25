@@ -33,7 +33,8 @@ namespace AddressablesGenerator
             IReadOnlyList<UnityEngine.Object> assets,
             BundledAssetGroupSchema.BundlePackingMode packingMode,
             bool clearGroup = false,
-            bool makeReadOnly = true
+            bool makeReadOnly = true,
+            int priority = 0
        )
         {
             var requests = assets.Select(a => new AssetEntryRequest() {asset = a, label = a.name}).ToArray();
@@ -42,7 +43,8 @@ namespace AddressablesGenerator
                 requests,
                 packingMode,
                 clearGroup,
-                makeReadOnly);
+                makeReadOnly,
+                priority);
         }
 
         public static void AddEntries(
@@ -50,11 +52,12 @@ namespace AddressablesGenerator
             IReadOnlyList<AssetEntryRequest> entryRequests,
             BundledAssetGroupSchema.BundlePackingMode packingMode,
             bool clearGroup = false,
-            bool makeReadOnly = true)
+            bool makeReadOnly = true,
+            int priority = 0)
         {
             try
             {
-                AddEntriesInternal(groupName, entryRequests, packingMode, clearGroup, makeReadOnly);
+                AddEntriesInternal(groupName, entryRequests, packingMode, clearGroup, makeReadOnly, priority);
             }
             finally
             {
@@ -67,7 +70,8 @@ namespace AddressablesGenerator
             IReadOnlyList<AssetEntryRequest> entryRequests,
             BundledAssetGroupSchema.BundlePackingMode packingMode,
             bool clearGroup = false,
-            bool makeReadOnly = true)
+            bool makeReadOnly = true, 
+            int priority = 0)
         {
             var token = new string($"{nameof(AddEntriesInternal)} {groupName}");
             
@@ -97,7 +101,7 @@ namespace AddressablesGenerator
                 HashSet<string> resourceFolders = new HashSet<string>();
 
                 AddressableAssetGroup group =
-                    ConfigureAddressableGroup(settings, groupName, packingMode, clearGroup, makeReadOnly);
+                    ConfigureAddressableGroup(settings, groupName, packingMode, clearGroup, makeReadOnly, priority);
 
                 ValidateAssetRequests(
                     groupName,
@@ -144,7 +148,8 @@ namespace AddressablesGenerator
             string groupName,
             BundledAssetGroupSchema.BundlePackingMode packingMode,
             bool clearGroup,
-            bool makeReadOnly)
+            bool makeReadOnly, 
+            int priority)
         {
             // Tag all our generated groups with the same suffix so we can find them programmatically
             var group = settings.FindOrCreateGroup(groupName + GENERATED_GROUP_SUFFIX, readOnly: makeReadOnly, postEvent: false);
@@ -161,7 +166,7 @@ namespace AddressablesGenerator
                 settings.RemoveAllEntriesFromGroup(group, postEvent: false);
             }
 
-            var bundledSchema = group.GetSchema(typeof(BundledAssetGroupSchema)) as BundledAssetGroupSchema;
+            var bundledSchema = group.GetSchema<BundledAssetGroupSchema>();
             if (bundledSchema != null)
             {
                 bundledSchema.BundleMode = packingMode;
@@ -175,6 +180,14 @@ namespace AddressablesGenerator
                     bundledSchema.UseAssetBundleCrc = false;
                 }
             }
+
+            var generatedSettingsSchema = group.GetSchema<GeneratedGroupSettingsSchema>();
+            if (generatedSettingsSchema == null)
+            {
+                generatedSettingsSchema = group.AddSchema<GeneratedGroupSettingsSchema>();
+            }
+
+            generatedSettingsSchema.Priority = priority;
 
             return group;
         }
@@ -352,11 +365,22 @@ namespace AddressablesGenerator
                 }
 
                 var entryRequest = entryRequests[i];
-                if (AddressablesGroupSplitterBuildProcessor.AssetIsInSplitGroupForGroup(entryRequest.asset, group))
+                var existingEntry = settings.FindAssetEntry(entryRequest.asset);
+
+                if (existingEntry != null)
                 {
-                    // This asset is already split out into a single-bundle group for the group we're attempting to add it to
-                    // Don't move it back
-                    continue;
+                    if (AddressablesGroupSplitterBuildProcessor.EntryIsInSplitGroupForGroup(existingEntry, group))
+                    {
+                        // This asset is already split out into a single-bundle group for the group we're attempting to add it to
+                        // Don't move it back
+                        continue;
+                    }
+
+                    if (Getpriority(existingEntry.parentGroup) >= Getpriority(group))
+                    {
+                        // This asset is in a higher priority group -- don't steal it from this group
+                        continue;
+                    }
                 }
 
                 var entry = settings.CreateOrMoveEntry(entryRequest.asset, group, readOnly: makeReadOnly, postEvent: false);
@@ -437,6 +461,17 @@ namespace AddressablesGenerator
             }
         }
 
+        private static int Getpriority(AddressableAssetGroup group)
+        {
+            var groupSettingsSchema = group.GetSchema<GeneratedGroupSettingsSchema>();
+            if (groupSettingsSchema != null)
+            {
+                return groupSettingsSchema.Priority;
+            }
+
+            return 0;
+        }
+        
 #endregion
 
 #region State Tracking
@@ -465,6 +500,7 @@ namespace AddressablesGenerator
             public BundledAssetGroupSchema.BundlePackingMode packingMode;
             public bool clearGroup;
             public bool makeReadOnly;
+            public int priority;
 
             public Action<UnityEngine.Object> onAddressablesGeneratedForAsset;
         }
@@ -484,6 +520,7 @@ namespace AddressablesGenerator
             BundledAssetGroupSchema.BundlePackingMode packingMode,
             bool clearGroup = false,
             bool makeReadOnly = true,
+            int priority = 0,
             Action<UnityEngine.Object> onAddressablesGeneratedForAsset = null
        ) where T : UnityEngine.Object
         {
@@ -493,6 +530,7 @@ namespace AddressablesGenerator
                 packingMode,
                 clearGroup,
                 makeReadOnly,
+                priority,
                 onAddressablesGeneratedForAsset);
         }
 
@@ -506,6 +544,7 @@ namespace AddressablesGenerator
             BundledAssetGroupSchema.BundlePackingMode packingMode,
             bool clearGroup = false,
             bool makeReadOnly = true,
+            int priority = 0,
             Action<UnityEngine.Object> onAddressablesGeneratedForAsset = null
        ) where T : UnityEngine.Object
         {
@@ -518,7 +557,6 @@ namespace AddressablesGenerator
 
             string UntypedGroupNameGenerator(object o) => groupNameGenerator((T) o);
             IReadOnlyList<AssetEntryRequest> UntypedRequestGenerator(object o) => requestGenerator((T) o);
-
             PerTypeGenerators[type] = new GroupGenerator()
             {
                 groupNameGenerator = UntypedGroupNameGenerator,
@@ -526,6 +564,7 @@ namespace AddressablesGenerator
                 packingMode = packingMode,
                 clearGroup = clearGroup,
                 makeReadOnly = makeReadOnly,
+                priority = priority,
                 onAddressablesGeneratedForAsset = onAddressablesGeneratedForAsset
             };
         }
@@ -575,7 +614,8 @@ namespace AddressablesGenerator
                             entryRequests,
                             generator.packingMode,
                             generator.clearGroup,
-                            generator.makeReadOnly);
+                            generator.makeReadOnly,
+                            generator.priority);
 
                         generator.onAddressablesGeneratedForAsset?.Invoke(asset);
                     }

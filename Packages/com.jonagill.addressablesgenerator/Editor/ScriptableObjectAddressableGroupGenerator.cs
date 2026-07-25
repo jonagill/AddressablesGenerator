@@ -52,6 +52,12 @@ namespace AddressablesGenerator
         /// either from the menu item or during the pre-build step. <see cref="AddressablesGeneratorSettings.RunDuringBuildBehaviour"/>
         /// </summary>
         protected abstract bool ClearGroupBeforeGenerating { get; }
+
+        /// <summary>
+        /// If multiple generators try to add the same asset into a group, it will end up in the group with a higher priority
+        /// This value is saved into <see cref="GeneratedGroupSettingsSchema.Priority"/>
+        /// </summary>
+        protected virtual int GroupPriority => 0;
         
         /// <summary>
         /// What name to use for the Addressable Group generated for this asset
