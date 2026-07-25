@@ -384,10 +384,11 @@ namespace AddressablesGenerator
                         // Don't move it back
                         continue;
                     }
-
-                    if (GetGroupPriority(existingEntry.parentGroup) >= GetGroupPriority(group))
+                    
+                    if (GetGroupPriority(existingEntry.parentGroup) >= GetGroupPriority(group) && 
+                        existingEntry.parentGroup != settings.DefaultGroup)
                     {
-                        // This asset is in a higher priority group -- don't steal it from this group
+                        // This asset is in an equal or higher priority group -- don't steal it from this group
                         continue;
                     }
                 }
