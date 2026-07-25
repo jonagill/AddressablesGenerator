@@ -174,10 +174,15 @@ namespace AddressablesGenerator
 
                 if (bundledSchema.LoadPath.GetName(settings) == AddressableAssetSettings.kLocalLoadPath)
                 {
-                    // It does not make sense to use the asset bundle cache for local bundles
-                    // Disable it here, as it can cause issues when attempting to load bundles
-                    bundledSchema.UseAssetBundleCache = false;
-                    bundledSchema.UseAssetBundleCrc = false;
+                    if (bundledSchema.UseAssetBundleCache || bundledSchema.UseAssetBundleCrc)
+                    {
+                        // It does not make sense to use the asset bundle cache for local bundles
+                        // Disable it here, as it can cause issues when attempting to load bundles
+                        bundledSchema.UseAssetBundleCache = false;
+                        bundledSchema.UseAssetBundleCrc = false;
+                        
+                        EditorUtility.SetDirty(bundledSchema);
+                    }
                 }
             }
 
@@ -187,7 +192,11 @@ namespace AddressablesGenerator
                 generatedSettingsSchema = group.AddSchema<GeneratedGroupSettingsSchema>();
             }
 
-            generatedSettingsSchema.Priority = priority;
+            if (generatedSettingsSchema.Priority != priority)
+            {
+                generatedSettingsSchema.Priority = priority;
+                EditorUtility.SetDirty(generatedSettingsSchema);
+            }
 
             return group;
         }
@@ -376,7 +385,7 @@ namespace AddressablesGenerator
                         continue;
                     }
 
-                    if (GetPriority(existingEntry.parentGroup) >= GetPriority(group))
+                    if (GetGroupPriority(existingEntry.parentGroup) >= GetGroupPriority(group))
                     {
                         // This asset is in a higher priority group -- don't steal it from this group
                         continue;
@@ -461,7 +470,7 @@ namespace AddressablesGenerator
             }
         }
 
-        private static int GetPriority(AddressableAssetGroup group)
+        private static int GetGroupPriority(AddressableAssetGroup group)
         {
             var groupSettingsSchema = group.GetSchema<GeneratedGroupSettingsSchema>();
             if (groupSettingsSchema != null)
